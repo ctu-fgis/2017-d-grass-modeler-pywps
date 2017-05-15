@@ -2549,19 +2549,41 @@ class WritePythonFile:
 #%%end
 """ % (EncodeString(' '.join(properties['description'].splitlines()))))
 
-        variables = self.model.GetVariables()
-        for key, data in variables.iteritems():
-            otype = self._getStandardizedOption(data['type'])
-            self.fd.write(
-                r"""
-#%%option %s
+        modelItems = self.model.GetItems()
+        for item in modelItems:
+            for flag in item.GetParameterizedParams()['flags']:
+                self.fd.write(
+                r"""#%%flag
+#%% key: %s
+#%% description: %s
+""" % (flag['name'], flag['description']))
+                if flag['value']:
+                    self.fd.write("#%% answer: %s\n" % flag['value'])
+                self.fd.write("#%end\n")
+
+            for param in item.GetParameterizedParams()['params']:
+                if param['prompt']:
+                    otype = self._getStandardizedOption(param['prompt'])
+                else:
+                    otype = self._getStandardizedOption(param['type'])
+                self.fd.write(
+                r"""#%%option %s
 #%% key: %s
 #%% description: %s
 #%% required: yes
-""" % (otype, key, data['description']))
-            if 'value' in data:
-                self.fd.write("#%% answer: %s\n" % data['value'])
-            self.fd.write("#% end\n")
+""" % (otype, param['name'], param['description']))
+                if not otype:
+                    self.fd.write("#%% type: %s\n" % param['type'])
+                if param['key_desc']:
+                    self.fd.write("#%% key_desc: %s" % (param['key_desc'][0]))
+                    if len(param['key_desc']) > 1:
+                        for key_desc in param['key_desc'][1:]:
+                            self.fd.write(", %s" % (key_desc))
+
+                    self.fd.write("\n")
+                if param['value']:
+                    self.fd.write("#%% answer: %s\n" % param['value'])
+                self.fd.write("#%end\n")
 
         # import modules
         self.fd.write(

@@ -2562,18 +2562,20 @@ class WritePythonFile:
                 self.fd.write("#%end\n")
 
             for param in item.GetParameterizedParams()['params']:
-                if param['prompt']:
-                    otype = self._getStandardizedOption(param['prompt'])
-                else:
-                    otype = self._getStandardizedOption(param['type'])
+                # if param['prompt']:
+                #     otype = self._getStandardizedOption(param['prompt'])
+                # else:
+                #     otype = self._getStandardizedOption(param['type'])
                 self.fd.write(
-                r"""#%%option %s
+                r"""#%%option
 #%% key: %s
 #%% description: %s
 #%% required: yes
-""" % (otype, param['name'], param['description']))
-                if not otype:
-                    self.fd.write("#%% type: %s\n" % param['type'])
+""" % (param['name'], param['description']))
+                if param['type'] != 'float':
+                    self.fd.write('#%% type: %s\n' % param['type'])
+                else:
+                    self.fd.write('#% type: double\n')
                 if param['key_desc']:
                     self.fd.write("#%% key_desc: %s" % (param['key_desc'][0]))
                     if len(param['key_desc']) > 1:

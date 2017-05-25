@@ -1931,6 +1931,11 @@ class PythonPanel(wx.Panel):
     def OnRun(self, event):
         """Run Python script"""
         self.filename = grass.tempfile()
+        #for item in self.parent.GetModel().GetItems():
+        #    if item.GetParameterizedParams():
+        #        self.filename = self.filename[:-2] + '.py'
+        #        break
+
         try:
             fd = open(self.filename, "w")
             fd.write(self.body.GetText())
@@ -1943,9 +1948,16 @@ class PythonPanel(wx.Panel):
             mode = stat.S_IMODE(os.lstat(self.filename)[stat.ST_MODE])
             os.chmod(self.filename, mode | stat.S_IXUSR)
 
-        self.parent._gconsole.RunCmd(
-            [fd.name],
-            skipInterface=True, onDone=self.OnDone)
+        for item in self.parent.GetModel().GetItems():
+            if len(item.GetParameterizedParams()['params']) + len(item.GetParameterizedParams()['flags'])>0:
+                self.parent._gconsole.RunCmd(
+                    [fd.name, '--ui'],
+                    skipInterface=False, onDone=self.OnDone)
+                break
+        else: # original thing
+            self.parent._gconsole.RunCmd(
+                [fd.name],
+                skipInterface=True, onDone=self.OnDone)
 
         event.Skip()
 

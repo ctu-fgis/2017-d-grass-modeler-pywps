@@ -15,6 +15,7 @@ Classes:
  - model::ModelComment
  - model::ProcessModelFile
  - model::WriteModelFile
+ - model::WritePyWPSFile
  - model::WritePythonFile
  - model::ModelParamDialog
 
@@ -2477,6 +2478,67 @@ class WriteModelFile:
              comment.GetHeight(),
              EncodeString(
                  comment.GetLabel())))
+
+
+class WritePyWPSFile:
+
+    def __init__(self, filename, pythonScript):
+        """Class for exporting model to PyWPS script
+
+        """
+        pythonScript = open(pythonScript, 'rb')
+        self.readPythonScript = pythonScript.readlines()
+        pythonScript.close()
+
+        self.fd = open(filename, 'w')
+        self._writePyWPS()
+
+    def _writePyWPS(self):
+        """Write PyWPS model to file"""
+
+        linePos = 18
+
+        for line in self.readPythonScript[17:]:
+            if 'def main' in line:
+                break
+            elif 'import' in line:
+                self.fd.write(line)
+
+        self.fd.write(r"""from pywps.Process import WPSProcess
+
+class Process(WPSProcess):
+    def __init__(self):
+        WPSProcess.__init__(self,
+            identifier = "returner",
+            title="Return process",
+            abstract="demonstration process of PyWPS",
+            version = "1.0",
+            storeSupported = True,
+            statusSupported = True)
+""")
+        for line in self.readPythonScript[18:]:
+            linePos = linePos + 1
+            if '#% key:' in line:
+                # TODO: other than literal inputs
+                self.fd.write('\n        self.%s = self.addLiteralInput(identifier="%s"' % (line[8:-1], line[8:-1]))
+            elif '#% description:' in line:
+                self.fd.write(',\n            title="%s")' % line[16:-1])
+            elif 'def main' in line:
+                break
+
+        # TODO: outputs
+
+        self.fd.write("""
+
+    def execute(self):
+""")
+        self._insertPythonScript(linePos)
+
+    def _insertPythonScript(self, linePos):
+        for line in self.readPythonScript[linePos:]:
+            if line[0] != '#':
+                self.fd.write("""        %s""" % line)
+        self.fd.close()
 
 
 class WritePythonFile:

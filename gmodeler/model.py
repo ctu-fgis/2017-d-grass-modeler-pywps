@@ -2614,11 +2614,15 @@ class WritePythonFile:
         modelItems = self.model.GetItems()
         for item in modelItems:
             for flag in item.GetParameterizedParams()['flags']:
+                if flag['label']:
+                    desc = flag['label']
+                else:
+                    desc = flag['description']
                 self.fd.write(
                 r"""#%%flag
 #%% key: %s
 #%% description: %s
-""" % (flag['name'], flag['description']))
+""" % (flag['name'], desc))
                 if flag['value']:
                     self.fd.write("#%% answer: %s\n" % flag['value'])
                 self.fd.write("#%end\n")
@@ -2628,12 +2632,16 @@ class WritePythonFile:
                 #     otype = self._getStandardizedOption(param['prompt'])
                 # else:
                 #     otype = self._getStandardizedOption(param['type'])
+                if param['label']:
+                    desc = param['label']
+                else:
+                    desc = param['description']
                 self.fd.write(
                 r"""#%%option
 #%% key: %s
 #%% description: %s
 #%% required: yes
-""" % (param['name'], param['description']))
+""" % (param['name'], desc))
                 if param['type'] != 'float':
                     self.fd.write('#%% type: %s\n' % param['type'])
                 else:

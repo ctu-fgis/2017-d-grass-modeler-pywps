@@ -2498,7 +2498,7 @@ class WritePyWPSFile:
 
         linePos = 18
 
-        for line in self.readPythonScript[17:]:
+        for line in self.readPythonScript[linePos-1:]:
             if 'def main' in line:
                 break
             elif 'import' in line:
@@ -2534,11 +2534,19 @@ class Process(WPSProcess):
 """)
         self._insertPythonScript(linePos)
 
+        self.fd.write("""if __name__ == "__main__":
+    process = Process()
+    process.execute()""")
+
+        self.fd.close()
+
     def _insertPythonScript(self, linePos):
         for line in self.readPythonScript[linePos:]:
             if line[0] != '#':
+                if line[0:11] == 'if __name__':
+                    break
                 self.fd.write("""        %s""" % line)
-        self.fd.close()
+
 
 
 class WritePythonFile:

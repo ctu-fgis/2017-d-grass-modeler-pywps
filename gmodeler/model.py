@@ -2504,18 +2504,24 @@ class WritePyWPSFile:
             elif 'import' in line:
                 self.fd.write(line)
 
+        for line in self.readPythonScript[:linePos]:
+            if '# MODULE:       ' in line:
+                scriptIdentifier = line.split('       ')[1][:-1]
+            elif '#% description: ' in line:
+                scriptAbstract = line.split('description: ')[1][:-1]
+
         self.fd.write(r"""from pywps.Process import WPSProcess
 
 class Process(WPSProcess):
     def __init__(self):
         WPSProcess.__init__(self,
-            identifier = "returner",
-            title="Return process",
-            abstract="demonstration process of PyWPS",
-            version = "1.0",
+            identifier = '%s',
+            title='%s',
+            abstract='%s',
+            version = '1.0',
             storeSupported = True,
             statusSupported = True)
-""")
+""" % (scriptIdentifier, scriptIdentifier, scriptAbstract))
         for line in self.readPythonScript[18:]:
             linePos = linePos + 1
             if '#% key:' in line:

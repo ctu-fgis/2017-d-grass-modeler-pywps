@@ -2705,18 +2705,29 @@ def cleanup():
         if not rast and not vect and not rast3d:
             self.fd.write('    pass\n')
 
-        self.fd.write("\ndef main():\n")
+        self.fd.write("\ndef main(options, flags):\n")
         for item in self.model.GetItems():
-            self._writePythonItem(item, variables=self.model.GetVariables())
+            self._writePythonItem(item, variables=item.GetParameterizedParams())
 
         self.fd.write("\n    return 0\n")
+
+        self.fd.write(r"""
+def getItemFlags(flags, itemFlags, itemName):
+    fl = ''
+""")
+
+        self.fd.write("""    for i in [key for key, value in flags.iteritems() if value == True]:
+        if i in itemFlags:
+            fl += i
+    return fl
+""")
 
         self.fd.write(
             r"""
 if __name__ == "__main__":
     options, flags = parser()
     atexit.register(cleanup)
-    sys.exit(main())
+    sys.exit(main(options, flags))
 """)
 
     def _writePythonItem(self, item, ignoreBlock=True, variables={}):
@@ -2797,8 +2808,22 @@ if __name__ == "__main__":
         ret = ''
         flags = ''
         params = list()
+        parameterizedParams = list()
+        parameterizedFlags = list()
+        itemParameterizedFlags = ''
+
+        for param in variables['params']:
+            parameterizedParams.append(param['name'])
+
+        for param in variables['flags']:
+            parameterizedFlags.append(param['name'])
 
         for f in opts['flags']:
+            if f.get('name') in parameterizedFlags and len(f.get('name')) == 1:
+                if len(itemParameterizedFlags)>0:
+                    itemParameterizedFlags = itemParameterizedFlags + ', "' + f.get('name') + '"'
+                else:
+                    itemParameterizedFlags = itemParameterizedFlags + '"' + f.get('name') + '"'
             if f.get('value', False):
                 name = f.get('name', '')
                 if len(name) > 1:
@@ -2809,15 +2834,19 @@ if __name__ == "__main__":
         for p in opts['params']:
             name = p.get('name', None)
             value = p.get('value', None)
-            if name and value:
+
+            if (name and value) or (name in parameterizedParams):
                 ptype = p.get('type', 'string')
                 foundVar = False
 
-                for var in sorted(variables, key=len, reverse=True):
-                    data = variables[var]
-                    if '%' + var in value:
-                        value = self._substituteVariable(value, var, data)
-                        foundVar = True
+                if name in parameterizedParams:
+                    foundVar = True
+                    value = 'options["%s"]' % name
+                #for var in sorted(variables, key=len, reverse=True):
+                    #data = variables[var]
+                    #if '%' + var in value:
+                    #    value = self._substituteVariable(value, var, data)
+                    #    foundVar = True
 
                 if foundVar or ptype != 'string':
                     params.append("%s = %s" % (name, value))
@@ -2827,6 +2856,16 @@ if __name__ == "__main__":
         ret += '"%s"' % task.get_name()
         if flags:
             ret += ",\n%sflags = '%s'" % (' ' * cmdIndent, flags)
+            if itemParameterizedFlags:
+                ret += ' + getItemFlags(flags, [%s], "%s")' % (
+                    itemParameterizedFlags,
+                    task.get_name())
+        elif itemParameterizedFlags:
+            ret += ',\n%sflags = getItemFlags(flags, [%s], "%s")' % (
+                ' ' * cmdIndent,
+                itemParameterizedFlags,
+                task.get_name())
+
         if len(params) > 0:
             ret += ",\n"
             for opt in params[:-1]:

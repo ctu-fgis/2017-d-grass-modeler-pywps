@@ -2549,7 +2549,7 @@ class Process(WPSProcess):
     def _insertPythonScript(self, linePos):
         for line in self.readPythonScript[linePos:]:
             if line[0] != '#':
-                if line[0:11] == 'if __name__':
+                if line[0:11] == 'if __name__' or line[0:10] == 'def getPar':
                     break
                 elif ' = options[' in line:
                     inLine = line.split(' options["')

@@ -2711,12 +2711,14 @@ def cleanup():
 
         self.fd.write("\n    return 0\n")
 
-        self.fd.write(r"""
-def getItemFlags(flags, itemFlags):
+        for item in modelItems:
+            if item.GetParameterizedParams()['flags']:
+                self.fd.write(r"""
+def getParameterizedFlags(flags, itemFlags):
     fl = ''
 """)
 
-        self.fd.write("""    for i in [key for key, value in flags.iteritems() if value == True]:
+                self.fd.write("""    for i in [key for key, value in flags.iteritems() if value == True]:
         if i in itemFlags:
             fl += i
     return fl
@@ -2857,10 +2859,10 @@ if __name__ == "__main__":
         if flags:
             ret += ",\n%sflags = '%s'" % (' ' * cmdIndent, flags)
             if itemParameterizedFlags:
-                ret += ' + getItemFlags(flags, [%s])' % (
+                ret += ' + getParameterizedFlags(flags, [%s])' % (
                     itemParameterizedFlags)
         elif itemParameterizedFlags:
-            ret += ',\n%sflags = getItemFlags(flags, [%s])' % (
+            ret += ',\n%sflags = getParameterizedFlags(flags, [%s])' % (
                 ' ' * cmdIndent,
                 itemParameterizedFlags)
 

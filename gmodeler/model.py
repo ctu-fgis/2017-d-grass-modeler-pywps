@@ -2712,7 +2712,7 @@ def cleanup():
         self.fd.write("\n    return 0\n")
 
         self.fd.write(r"""
-def getItemFlags(flags, itemFlags, itemName):
+def getItemFlags(flags, itemFlags):
     fl = ''
 """)
 
@@ -2857,14 +2857,12 @@ if __name__ == "__main__":
         if flags:
             ret += ",\n%sflags = '%s'" % (' ' * cmdIndent, flags)
             if itemParameterizedFlags:
-                ret += ' + getItemFlags(flags, [%s], "%s")' % (
-                    itemParameterizedFlags,
-                    task.get_name())
+                ret += ' + getItemFlags(flags, [%s])' % (
+                    itemParameterizedFlags)
         elif itemParameterizedFlags:
-            ret += ',\n%sflags = getItemFlags(flags, [%s], "%s")' % (
+            ret += ',\n%sflags = getItemFlags(flags, [%s])' % (
                 ' ' * cmdIndent,
-                itemParameterizedFlags,
-                task.get_name())
+                itemParameterizedFlags)
 
         if len(params) > 0:
             ret += ",\n"

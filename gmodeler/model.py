@@ -2551,7 +2551,12 @@ class Process(WPSProcess):
             if line[0] != '#':
                 if line[0:11] == 'if __name__':
                     break
-                self.fd.write("""        %s""" % line)
+                elif ' = options[' in line:
+                    inLine = line.split(' options["')
+                    inLine = '%s self.%s,' % (inLine[0], inLine[1].split('"]')[0])
+                    self.fd.write("""    %s\n""" % inLine)
+                else:
+                    self.fd.write("""    %s""" % line)
 
 
 

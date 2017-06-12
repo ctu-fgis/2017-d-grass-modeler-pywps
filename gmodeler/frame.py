@@ -1957,8 +1957,9 @@ class PyWPSPanel(wx.Panel):
             mode = stat.S_IMODE(os.lstat(self.pyFilename)[stat.ST_MODE])
             os.chmod(self.pyFilename, mode | stat.S_IXUSR)
 
-        filename = 'pywps.py'
-        WritePyWPSFile(filename, fd.name)
+        # filename = 'pyw.py'
+        # WritePyWPSFile(filename, fd.name)
+        self.SaveAs(force = True)
 
         event.Skip()
 

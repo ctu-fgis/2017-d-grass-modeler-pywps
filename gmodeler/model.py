@@ -2510,23 +2510,16 @@ class WritePyWPSFile:
             elif '#% description: ' in line:
                 scriptAbstract = line.split('description: ')[1][:-1]
 
-        self.fd.write(r"""from pywps.Process import WPSProcess
+        self.fd.write(r"""from pywps import Process, LiteralInput
 
-class Process(WPSProcess):
+class Model(Process):
     def __init__(self):
-        WPSProcess.__init__(self,
-            identifier = '%s',
-            title='%s',
-            abstract='%s',
-            version = '1.0',
-            storeSupported = True,
-            statusSupported = True)
-""" % (scriptIdentifier, scriptIdentifier, scriptAbstract))
+""" )
         for line in self.readPythonScript[18:]:
             linePos = linePos + 1
             if '#% key:' in line:
                 # TODO: other than literal inputs
-                self.fd.write('\n        self.%s = self.addLiteralInput(identifier="%s"' % (line[8:-1], line[8:-1]))
+                self.fd.write('\n        self.%s = LiteralInput(identifier="%s"' % (line[8:-1], line[8:-1]))
             elif '#% description:' in line:
                 self.fd.write(',\n            title="%s")' % line[16:-1])
             elif 'def main' in line:
@@ -2534,14 +2527,25 @@ class Process(WPSProcess):
 
         # TODO: outputs
 
+        self.fd.write(r"""
+
+        super(Model, self).__init__(
+            self._handler,
+            identifier = '%s',
+            title='%s',
+            abstract='%s',
+            version = '1.0',
+            storeSupported = True,
+            statusSupported = True)""" % (scriptIdentifier, scriptIdentifier, scriptAbstract))
+
         self.fd.write("""
 
-    def execute(self):
+    def _handler(self):
 """)
         self._insertPythonScript(linePos)
 
         self.fd.write("""if __name__ == "__main__":
-    process = Process()
+    process = Model()
     process.execute()""")
 
         self.fd.close()

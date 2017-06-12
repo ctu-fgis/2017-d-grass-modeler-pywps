@@ -2511,6 +2511,7 @@ class WritePyWPSFile:
                 scriptAbstract = line.split('description: ')[1][:-1]
 
         self.fd.write(r"""from pywps import Process, LiteralInput
+from grass.pygrass.modules import Module
 
 class Model(Process):
     def __init__(self):
@@ -2540,11 +2541,12 @@ class Model(Process):
 
         self.fd.write("""
 
-    def _handler(self):
+    def _handler(self, response):
 """)
         self._insertPythonScript(linePos)
 
-        self.fd.write("""if __name__ == "__main__":
+        self.fd.write("""
+if __name__ == "__main__":
     process = Model()
     process.execute()""")
 
@@ -2553,14 +2555,18 @@ class Model(Process):
     def _insertPythonScript(self, linePos):
         for line in self.readPythonScript[linePos:]:
             if line[0] != '#':
-                if line[0:11] == 'if __name__' or line[0:10] == 'def getPar':
+                print(line[4:10])
+                if line[4:10] == 'return':
+                    self.fd.write('\n        return response\n')
                     break
+                elif line[0:15] == '    run_command':
+                    self.fd.write("""        Module%s""" % line[15:])
                 elif ' = options[' in line:
                     inLine = line.split(' options["')
-                    inLine = '%s self.%s,' % (inLine[0], inLine[1].split('"]')[0])
-                    self.fd.write("""    %s\n""" % inLine)
+                    inLine = '%s self.%s,\n' % (inLine[0], inLine[1].split('"]')[0])
+                    self.fd.write(inLine[1:])
                 else:
-                    self.fd.write("""    %s""" % line)
+                    self.fd.write(line[1:])
 
 
 

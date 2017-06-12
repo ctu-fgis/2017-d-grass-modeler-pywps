@@ -2512,6 +2512,7 @@ class WritePyWPSFile:
 
         self.fd.write(r"""from pywps import Process, LiteralInput
 from grass.pygrass.modules import Module
+from pywps.app.Service import Service
 
 class Model(Process):
     def __init__(self):
@@ -2536,8 +2537,9 @@ class Model(Process):
             title='%s',
             abstract='%s',
             version = '1.0',
-            storeSupported = True,
-            statusSupported = True)""" % (scriptIdentifier, scriptIdentifier, scriptAbstract))
+            store_supported = True,
+            status_supported = True)""" % (scriptIdentifier, scriptIdentifier,
+                                           scriptAbstract))
 
         self.fd.write("""
 
@@ -2548,14 +2550,15 @@ class Model(Process):
         self.fd.write("""
 if __name__ == "__main__":
     process = Model()
-    process.execute()""")
+
+    processes = [Model()]
+    application = Service(processes)""")
 
         self.fd.close()
 
     def _insertPythonScript(self, linePos):
         for line in self.readPythonScript[linePos:]:
             if line[0] != '#':
-                print(line[4:10])
                 if line[4:10] == 'return':
                     self.fd.write('\n        return response\n')
                     break

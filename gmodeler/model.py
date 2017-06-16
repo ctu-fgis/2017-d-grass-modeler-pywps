@@ -2510,7 +2510,7 @@ class WritePyWPSFile:
             elif '#% description: ' in line:
                 scriptAbstract = line.split('description: ')[1][:-1]
 
-        self.fd.write(r"""from pywps import Process, LiteralInput
+        self.fd.write(r"""from pywps import Process, LiteralInput, ComplexInput, ComplexOutput
 from grass.pygrass.modules import Module
 from pywps.app.Service import Service
 

@@ -2516,29 +2516,39 @@ from pywps.app.Service import Service
 
 class Model(Process):
     def __init__(self):
+        inputs = list()
+        outputs = list()
 """ )
         for line in self.readPythonScript[18:]:
             linePos = linePos + 1
             if '#% key:' in line:
-                # TODO: other than literal inputs
-                self.fd.write('\n        self.%s = LiteralInput(identifier="%s"' % (line[8:-1], line[8:-1]))
+                if 'output' not in line:
+                    if 'input' in line:
+                        self.fd.write('\n        inputs.append(ComplexInput(identifier="%s"' % line[8:-1])
+                    else:
+                        self.fd.write('\n        inputs.append(LiteralInput(identifier="%s"' % line[8:-1])
+                else:
+                    self.fd.write('\n        outputs.append(ComplexOutput(identifier="%s"' % line[8:-1])
+            # TODO: Make inputs and outputs better (diversify literal/complex, other outputs than "output")
             elif '#% description:' in line:
                 self.fd.write(',\n            title="%s")' % line[16:-1])
+            elif '#% type:' in line:
+                self.fd.write(',\n            data_type=%s)' % line[9:-1])
             elif 'def main' in line:
                 break
-
-        # TODO: outputs
 
         self.fd.write(r"""
 
         super(Model, self).__init__(
             self._handler,
-            identifier = '%s',
+            identifier='%s',
             title='%s',
+            inputs=inputs,
+            outputs=outputs,
             abstract='%s',
-            version = '1.0',
-            store_supported = True,
-            status_supported = True)""" % (scriptIdentifier, scriptIdentifier,
+            version='1.0',
+            store_supported=True,
+            status_supported=True)""" % (scriptIdentifier, scriptIdentifier,
                                            scriptAbstract))
 
         self.fd.write("""
@@ -2558,17 +2568,29 @@ if __name__ == "__main__":
         self.fd.close()
 
     def _insertPythonScript(self, linePos):
+        rank = 0
         for line in self.readPythonScript[linePos:]:
             if line[0] != '#':
                 if line[4:10] == 'return':
+                    self.fd.write('\n        response.outputs["output"].file = %s\n' % lastOutput)
+                    # TODO: Make better (it doesn't have to be "output")
                     self.fd.write('\n        return response\n')
                     break
                 elif line[0:15] == '    run_command':
                     self.fd.write("""        Module%s""" % line[15:])
                 elif ' = options[' in line:
-                    inLine = line.split(' options["')
-                    inLine = '%s self.%s,\n' % (inLine[0], inLine[1].split('"]')[0])
+                    inLine = line.split(' = options')
+                    if 'output' not in inLine[1]:
+                        inLine = '%s=request.inputs%s[0].file' % (inLine[0], (inLine[1])[:-2])
+                    else:
+                        rank += 1
+                        lastOutput = '"output%d"' % rank
+                        inLine = '%s=%s' % (inLine[0], lastOutput)
                     self.fd.write(inLine[1:])
+                    if line[-2] == ',':
+                        self.fd.write(',\n')
+                    else:
+                        self.fd.write(')\n')
                 else:
                     self.fd.write(line[1:])
 

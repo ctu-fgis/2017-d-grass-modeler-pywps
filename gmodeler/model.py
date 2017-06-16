@@ -2543,7 +2543,8 @@ class Model(Process):
 
         self.fd.write("""
 
-    def _handler(self, response):
+    @staticmethod
+    def _handler(request, response):
 """)
         self._insertPythonScript(linePos)
 

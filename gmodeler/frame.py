@@ -2058,21 +2058,21 @@ class PyWPSPanel(wx.Panel):
             self.pyFilename = grass.tempfile()
 
         try:
-            fd = open(self.pyFilename, "w")
-            fd.write(self.parent.pythonPanel.body.GetText())
+            pyfd = open(self.pyFilename, "w")
+            pyfd.write(self.parent.pythonPanel.body.GetText())
 
         except IOError as e:
             GError(_("Unable to launch Python script. %s") % e,
                    parent=self)
             return
         finally:
-            fd.close()
+            pyfd.close()
             mode = stat.S_IMODE(os.lstat(self.pyFilename)[stat.ST_MODE])
             os.chmod(self.pyFilename, mode | stat.S_IXUSR)
 
-        filename = 'pywps.py'
-        WritePyWPSFile(filename, fd.name)
-        fd2 = open(filename, 'rb')
+        pywpsfd = grass.tempfile()
+        WritePyWPSFile(pywpsfd, pyfd.name)
+        fd2 = open(pywpsfd, 'rb')
         self.body.SetText(fd2.read())
         fd2.close()
 

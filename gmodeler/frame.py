@@ -1900,8 +1900,8 @@ class PyWPSPanel(wx.Panel):
                                     label=" %s " % _("PyWPS script"))
         self.body = PyStc(parent=self, statusbar=self.parent.GetStatusBar())
 
-        self.btnRun = wx.Button(parent=self, id=wx.ID_ANY, label=_("&Export"))
-        self.btnRun.SetToolTipString(_("Export PyWPS script"))
+        self.btnRun = wx.Button(parent=self, id=wx.ID_ANY, label=_("&Run"))
+        self.btnRun.SetToolTipString(_("Run PyWPS script"))
         self.Bind(wx.EVT_BUTTON, self.OnRun, self.btnRun)
         self.btnSaveAs = wx.Button(parent=self, id=wx.ID_SAVEAS)
         self.btnSaveAs.SetToolTipString(_("Save PyWPS script to file"))
@@ -1946,7 +1946,7 @@ class PyWPSPanel(wx.Panel):
 
         try:
             fd = open(self.pyFilename, "w")
-            fd.write(self.parent.pythonPanel.body.GetText())
+            fd.write(self.parent.pyWPSPanel.body.GetText())
 
         except IOError as e:
             GError(_("Unable to launch Python script. %s") % e,
@@ -1957,9 +1957,9 @@ class PyWPSPanel(wx.Panel):
             mode = stat.S_IMODE(os.lstat(self.pyFilename)[stat.ST_MODE])
             os.chmod(self.pyFilename, mode | stat.S_IXUSR)
 
-        # filename = 'pyw.py'
-        # WritePyWPSFile(filename, fd.name)
-        self.SaveAs(force = True)
+        self.parent._gconsole.RunCmd(
+            [fd.name],
+            skipInterface=True, onDone=self.OnDone)
 
         event.Skip()
 

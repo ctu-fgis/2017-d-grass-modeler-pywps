@@ -2497,6 +2497,7 @@ class WritePyWPSFile:
         """Write PyWPS model to file"""
 
         linePos = 18
+        self.fd.write('#!/usr/bin/env python3\n\n')
 
         for line in self.readPythonScript[linePos-1:]:
             if 'def main' in line:

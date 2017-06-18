@@ -2536,7 +2536,10 @@ class Model(Process):
                 self.fd.write(',\n            title="%s"' % line[16:-1])
             elif '#% type:' in line:
                 if lastItem not in ['input', 'output']:
-                    self.fd.write(',\n            data_type="%s"))' % line[9:-1])
+                    if line[9:-1] != 'double':
+                        self.fd.write(',\n            data_type="%s"))' % line[9:-1])
+                    else:
+                        self.fd.write(',\n            data_type="float"))')
                 else:
                     self.fd.write('))')
             elif 'def main' in line:

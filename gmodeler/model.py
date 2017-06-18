@@ -2529,11 +2529,15 @@ class Model(Process):
                         self.fd.write('\n        inputs.append(LiteralInput(identifier="%s"' % line[8:-1])
                 else:
                     self.fd.write('\n        outputs.append(ComplexOutput(identifier="%s"' % line[8:-1])
+                lastItem = line[8:-1]
             # TODO: Make inputs and outputs better (diversify literal/complex, other outputs than "output")
             elif '#% description:' in line:
-                self.fd.write(',\n            title="%s")' % line[16:-1])
+                self.fd.write(',\n            title="%s"' % line[16:-1])
             elif '#% type:' in line:
-                self.fd.write(',\n            data_type=%s)' % line[9:-1])
+                if lastItem not in ['input', 'output']:
+                    self.fd.write(',\n            data_type="%s"))' % line[9:-1])
+                else:
+                    self.fd.write('))')
             elif 'def main' in line:
                 break
 

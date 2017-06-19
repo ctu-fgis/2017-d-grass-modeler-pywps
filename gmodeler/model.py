@@ -2535,7 +2535,7 @@ class Model(Process):
             elif '#% description:' in line:
                 self.fd.write(',\n            title="%s"' % line[16:-1])
             elif '#% type:' in line:
-                if lastItem not in ['input', 'output']:
+                if 'input' not in lastItem and 'output' not in lastItem:
                     if line[9:-1] != 'double':
                         self.fd.write(',\n            data_type="%s"))' % line[9:-1])
                     else:
@@ -2580,8 +2580,8 @@ if __name__ == "__main__":
         for line in self.readPythonScript[linePos:]:
             if line[0] != '#':
                 if line[4:10] == 'return':
-                    self.fd.write('\n        response.outputs["output"].file = %s\n' % lastOutput)
-                    # TODO: Make better (it doesn't have to be "output")
+                    self.fd.write('\n        response.outputs["output1"].file = %s\n' % lastOutput)
+                    # TODO: Make better (it doesn't have to be "output1")
                     self.fd.write('\n        return response\n')
                     break
                 elif line[0:15] == '    run_command':
@@ -2701,10 +2701,10 @@ class WritePythonFile:
                     desc = param['description']
                 self.fd.write(
                 r"""#%%option
-#%% key: %s
+#%% key: %s%s
 #%% description: %s
 #%% required: yes
-""" % (param['name'], desc))
+""" % (param['name'], item.GetId(), desc))
                 if param['type'] != 'float':
                     self.fd.write('#%% type: %s\n' % param['type'])
                 else:
@@ -2848,12 +2848,13 @@ if __name__ == "__main__":
         self.fd.write(
             strcmd +
             self._getPythonActionCmd(
+                item,
                 task,
                 len(strcmd),
                 variables) +
             '\n')
 
-    def _getPythonActionCmd(self, task, cmdIndent, variables={}):
+    def _getPythonActionCmd(self, item, task, cmdIndent, variables={}):
         opts = task.get_options()
 
         ret = ''
@@ -2892,7 +2893,7 @@ if __name__ == "__main__":
 
                 if name in parameterizedParams:
                     foundVar = True
-                    value = 'options["%s"]' % name
+                    value = 'options["%s%s"]' % (name, item.GetId())
                 #for var in sorted(variables, key=len, reverse=True):
                     #data = variables[var]
                     #if '%' + var in value:

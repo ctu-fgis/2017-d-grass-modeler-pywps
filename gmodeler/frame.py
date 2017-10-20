@@ -17,6 +17,7 @@ This program is free software under the GNU General Public License
 (>=v2). Read the file COPYING that comes with GRASS for details.
 
 @author Martin Landa <landa.martin gmail.com>
+@PyWPS, Python parameterization and GUI Ondrej Pesek <pesej.ondrek gmail.com>
 """
 
 import os
@@ -2152,10 +2153,6 @@ class PythonPanel(wx.Panel):
     def OnRun(self, event):
         """Run Python script"""
         self.filename = grass.tempfile()
-        #for item in self.parent.GetModel().GetItems():
-        #    if item.GetParameterizedParams():
-        #        self.filename = self.filename[:-2] + '.py'
-        #        break
 
         try:
             fd = open(self.filename, "w")
@@ -2175,7 +2172,7 @@ class PythonPanel(wx.Panel):
                     [fd.name, '--ui'],
                     skipInterface=False, onDone=self.OnDone)
                 break
-        else: # original thing
+        else:
             self.parent._gconsole.RunCmd(
                 [fd.name],
                 skipInterface=True, onDone=self.OnDone)

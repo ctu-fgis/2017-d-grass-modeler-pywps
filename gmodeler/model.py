@@ -25,6 +25,7 @@ This program is free software under the GNU General Public License
 (>=v2). Read the file COPYING that comes with GRASS for details.
 
 @author Martin Landa <landa.martin gmail.com>
+@PyWPS, Python parameterization and GUI Ondrej Pesek <pesej.ondrek gmail.com>
 """
 
 import os
@@ -2682,19 +2683,19 @@ class WritePythonFile:
                 else:
                     desc = flag['description']
                 self.fd.write(
-                r"""#%%flag
-#%% key: %s
+                r"""#%%option
+#%% key: %s%s
 #%% description: %s
-""" % (flag['name'], desc))
+#%% required: yes
+#%% type: string
+#%% options: True, False
+#%% guisection: Flags
+""" % (flag['name'], item.GetId(), desc))
                 if flag['value']:
                     self.fd.write("#%% answer: %s\n" % flag['value'])
                 self.fd.write("#%end\n")
 
             for param in item.GetParameterizedParams()['params']:
-                # if param['prompt']:
-                #     otype = self._getStandardizedOption(param['prompt'])
-                # else:
-                #     otype = self._getStandardizedOption(param['type'])
                 if param['label']:
                     desc = param['label']
                 else:
@@ -2756,22 +2757,25 @@ def cleanup():
 
         self.fd.write("\ndef main(options, flags):\n")
         for item in self.model.GetItems():
-            self._writePythonItem(item, variables=item.GetParameterizedParams())
+            self._writePythonItem(item,
+                                  variables=item.GetParameterizedParams())
 
         self.fd.write("\n    return 0\n")
 
         for item in modelItems:
             if item.GetParameterizedParams()['flags']:
                 self.fd.write(r"""
-def getParameterizedFlags(flags, itemFlags):
+def getParameterizedFlags(paramFlags, itemFlags):
     fl = ''
 """)
 
-                self.fd.write("""    for i in [key for key, value in flags.iteritems() if value == True]:
+                self.fd.write("""    for i in [key for key, value in paramFlags.iteritems() if value == 'True']:
         if i in itemFlags:
-            fl += i
+            fl += i[0]
+
     return fl
 """)
+                break
 
         self.fd.write(
             r"""
@@ -2873,9 +2877,9 @@ if __name__ == "__main__":
         for f in opts['flags']:
             if f.get('name') in parameterizedFlags and len(f.get('name')) == 1:
                 if len(itemParameterizedFlags)>0:
-                    itemParameterizedFlags = itemParameterizedFlags + ', "' + f.get('name') + '"'
+                    itemParameterizedFlags = itemParameterizedFlags + ', "' + f.get('name') + str(item.GetId()) + '"'
                 else:
-                    itemParameterizedFlags = itemParameterizedFlags + '"' + f.get('name') + '"'
+                    itemParameterizedFlags = itemParameterizedFlags + '"' + f.get('name') + str(item.GetId()) + '"'
             if f.get('value', False):
                 name = f.get('name', '')
                 if len(name) > 1:
@@ -2909,10 +2913,10 @@ if __name__ == "__main__":
         if flags:
             ret += ",\n%sflags = '%s'" % (' ' * cmdIndent, flags)
             if itemParameterizedFlags:
-                ret += ' + getParameterizedFlags(flags, [%s])' % (
+                ret += ' + getParameterizedFlags(options, [%s])' % (
                     itemParameterizedFlags)
         elif itemParameterizedFlags:
-            ret += ',\n%sflags = getParameterizedFlags(flags, [%s])' % (
+            ret += ',\n%sflags = getParameterizedFlags(options, [%s])' % (
                 ' ' * cmdIndent,
                 itemParameterizedFlags)
 

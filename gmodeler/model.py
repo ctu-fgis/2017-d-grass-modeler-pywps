@@ -2526,19 +2526,24 @@ class Model(Process):
             if '#% key:' in line:
                 if 'output' not in line:
                     if 'input' in line:
-                        self.fd.write('\n        inputs.append(ComplexInput(identifier="%s"' % line[8:-1])
+                        self.fd.write('\n        inputs.append(ComplexInput('
+                                      'identifier="{}"'.format(line[8:-1]))
                     else:
-                        self.fd.write('\n        inputs.append(LiteralInput(identifier="%s"' % line[8:-1])
+                        self.fd.write('\n        inputs.append(LiteralInput('
+                                      'identifier="{}"'.format(line[8:-1]))
                 else:
-                    self.fd.write('\n        outputs.append(ComplexOutput(identifier="%s"' % line[8:-1])
+                    self.fd.write('\n        outputs.append(ComplexOutput('
+                                  'identifier="{}"'.format(line[8:-1]))
                 lastItem = line[8:-1]
-            # TODO: Make inputs and outputs better (diversify literal/complex, other outputs than "output")
+            # TODO: Make inputs and outputs better
+            # TODO: (diversify literal/complex, other outputs than "output")
             elif '#% description:' in line:
                 self.fd.write(',\n            title="%s"' % line[16:-1])
             elif '#% type:' in line:
                 if 'input' not in lastItem and 'output' not in lastItem:
                     if line[9:-1] != 'double':
-                        self.fd.write(',\n            data_type="%s"))' % line[9:-1])
+                        self.fd.write(',\n            '
+                                      'data_type="{}"))'.format(line[9:-1]))
                     else:
                         self.fd.write(',\n            data_type="float"))')
                 else:
@@ -2558,7 +2563,7 @@ class Model(Process):
             version='1.0',
             store_supported=True,
             status_supported=True)""" % (scriptIdentifier, scriptIdentifier,
-                                           scriptAbstract))
+                                         scriptAbstract))
 
         self.fd.write("""
 
@@ -2581,16 +2586,18 @@ if __name__ == "__main__":
         for line in self.readPythonScript[linePos:]:
             if line[0] != '#':
                 if line[4:10] == 'return':
-                    self.fd.write('\n        response.outputs["output1"].file = %s\n' % lastOutput)
+                    self.fd.write('\n        response.outputs'
+                                  '["output1"].file = {}\n'.format(lastOutput))
                     # TODO: Make better (it doesn't have to be "output1")
                     self.fd.write('\n        return response\n')
                     break
                 elif line[0:15] == '    run_command':
-                    self.fd.write("""        Module%s""" % line[15:])
+                    self.fd.write("""        Module{}""".format(line[15:]))
                 elif ' = options[' in line:
                     inLine = line.split(' = options')
                     if 'output' not in inLine[1]:
-                        inLine = '%s=request.inputs%s[0].file' % (inLine[0], (inLine[1])[:-2])
+                        inLine = '{}=request.inputs{}[0].file'.format(
+                            inLine[0], (inLine[1])[:-2])
                     else:
                         rank += 1
                         lastOutput = '"output%d"' % rank
@@ -2602,7 +2609,6 @@ if __name__ == "__main__":
                         self.fd.write(')\n')
                 else:
                     self.fd.write(line[1:])
-
 
 
 class WritePythonFile:
@@ -2788,7 +2794,8 @@ if __name__ == "__main__":
     def _writePythonItem(self, item, ignoreBlock=True, variables={}):
         """Write model object to Python file"""
         if isinstance(item, ModelAction):
-            if ignoreBlock and item.GetBlockId():  # ignore items in loops of conditions
+            if ignoreBlock and item.GetBlockId():
+                # ignore items in loops of conditions
                 return
             self._writePythonAction(item, variables=variables)
         elif isinstance(item, ModelLoop) or isinstance(item, ModelCondition):
@@ -2814,9 +2821,8 @@ if __name__ == "__main__":
                                 1:-
                                 1]))
                     cond += "grass.read_command("
-                    cond += self._getPythonActionCmd(task,
-                                                     len(cond),
-                                                     variables=[condVar]) + ".splitlines()"
+                    cond += self._getPythonActionCmd(
+                        task, len(cond), variables=[condVar]) + ".splitlines()"
                 else:
                     cond += condText
                 self.fd.write('%s:\n' % cond)
@@ -2877,9 +2883,13 @@ if __name__ == "__main__":
         for f in opts['flags']:
             if f.get('name') in parameterizedFlags and len(f.get('name')) == 1:
                 if len(itemParameterizedFlags)>0:
-                    itemParameterizedFlags = itemParameterizedFlags + ', "' + f.get('name') + str(item.GetId()) + '"'
+                    itemParameterizedFlags = '{}, "{}{}"'.format(
+                        itemParameterizedFlags, f.get('name'),
+                        str(item.GetId()))
                 else:
-                    itemParameterizedFlags = itemParameterizedFlags + '"' + f.get('name') + str(item.GetId()) + '"'
+                    itemParameterizedFlags = '{}"{}{}"'.format(
+                        itemParameterizedFlags, f.get('name'),
+                        str(item.GetId()))
             if f.get('value', False):
                 name = f.get('name', '')
                 if len(name) > 1:

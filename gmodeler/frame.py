@@ -1908,8 +1908,9 @@ class PyWPSPanel(wx.Panel):
         self.btnSaveAs.SetToolTipString(_("Save PyWPS script to file"))
         self.Bind(wx.EVT_BUTTON, self.OnSaveAs, self.btnSaveAs)
         self.btnRefresh = wx.Button(parent=self, id=wx.ID_REFRESH)
-        self.btnRefresh.SetToolTipString(_("Refresh PyWPS script based on the python script.\n"
-                                           "It will discards all local changes."))
+        self.btnRefresh.SetToolTipString(_(
+            "Refresh PyWPS script based on the python script.\n"
+            "It will discards all local changes."))
         self.Bind(wx.EVT_BUTTON, self.OnRefresh, self.btnRefresh)
 
         self._layout()
@@ -2119,8 +2120,9 @@ class PythonPanel(wx.Panel):
         self.btnSaveAs.SetToolTipString(_("Save python script to file"))
         self.Bind(wx.EVT_BUTTON, self.OnSaveAs, self.btnSaveAs)
         self.btnRefresh = wx.Button(parent=self, id=wx.ID_REFRESH)
-        self.btnRefresh.SetToolTipString(_("Refresh python script based on the model.\n"
-                                           "It will discards all local changes."))
+        self.btnRefresh.SetToolTipString(_(
+            "Refresh python script based on the model.\n"
+            "It will discards all local changes."))
         self.Bind(wx.EVT_BUTTON, self.OnRefresh, self.btnRefresh)
 
         self._layout()
@@ -2167,7 +2169,8 @@ class PythonPanel(wx.Panel):
             os.chmod(self.filename, mode | stat.S_IXUSR)
 
         for item in self.parent.GetModel().GetItems():
-            if len(item.GetParameterizedParams()['params']) + len(item.GetParameterizedParams()['flags'])>0:
+            if len(item.GetParameterizedParams()['params']) + len(
+                    item.GetParameterizedParams()['flags']) > 0:
                 self.parent._gconsole.RunCmd(
                     [fd.name, '--ui'],
                     skipInterface=False, onDone=self.OnDone)

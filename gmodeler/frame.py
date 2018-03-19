@@ -17,7 +17,7 @@ This program is free software under the GNU General Public License
 (>=v2). Read the file COPYING that comes with GRASS for details.
 
 @author Martin Landa <landa.martin gmail.com>
-@PyWPS, Python parameterization and GUI Ondrej Pesek <pesej.ondrek gmail.com>
+@PyWPS, Python parameterization and pyGUI Ondrej Pesek <pesej.ondrek gmail.com>
 """
 
 import os
@@ -1408,7 +1408,7 @@ class ModelEvtHandler(ogl.ShapeEvtHandler):
             dlg.Destroy()
 
     def OnBeginDragLeft(self, x, y, keys=0, attachment=0):
-        """Drag shape (begining)"""
+        """Drag shape (beginning)"""
         self.frame.ModelChanged()
         if self._previousHandler:
             self._previousHandler.OnBeginDragLeft(x, y, keys, attachment)
@@ -2122,7 +2122,7 @@ class PythonPanel(wx.Panel):
         self.btnRefresh = wx.Button(parent=self, id=wx.ID_REFRESH)
         self.btnRefresh.SetToolTipString(_(
             "Refresh python script based on the model.\n"
-            "It will discards all local changes."))
+            "It will discard all local changes."))
         self.Bind(wx.EVT_BUTTON, self.OnRefresh, self.btnRefresh)
 
         self._layout()

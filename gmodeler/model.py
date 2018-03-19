@@ -2512,9 +2512,12 @@ class WritePyWPSFile:
             elif '#% description: ' in line:
                 scriptAbstract = line.split('description: ')[1][:-1]
 
-        self.fd.write(r"""from pywps import Process, LiteralInput, ComplexInput, ComplexOutput
+        self.fd.write(r"""from pywps import Process, LiteralInput, ComplexInput, ComplexOutput, Format
 from grass.pygrass.modules import Module
 from pywps.app.Service import Service
+from pywps.inout.formats import FORMATS
+
+supFormats = [Format(form.mime_type) for form in FORMATS]
 
 class Model(Process):
     def __init__(self):
@@ -2526,16 +2529,17 @@ class Model(Process):
             if '#% key:' in line:
                 if 'output' not in line:
                     if 'input' in line:
-                        self.fd.write('\n        inputs.append(ComplexInput('
-                                      'identifier="{}"'.format(line[8:-1]))
+                        self.fd.write("""
+        inputs.append(ComplexInput(identifier='{}',
+            supported_formats=supFormats""".format(line[8:-1]))
                     else:
-                        self.fd.write('\n        inputs.append(LiteralInput('
-                                      'identifier="{}"'.format(line[8:-1]))
+                        self.fd.write("""
+        inputs.append(LiteralInput(identifier='{}'""".format(line[8:-1]))
                 else:
-                    self.fd.write('\n        outputs.append(ComplexOutput('
-                                  'identifier="{}"'.format(line[8:-1]))
+                    self.fd.write("""
+        outputs.append(ComplexOutput(identifier='{}',
+            supported_formats=supFormats""".format(line[8:-1]))
                 lastItem = line[8:-1]
-            # TODO: Make inputs and outputs better
             # TODO: (diversify literal/complex, other outputs than "output")
             elif '#% description:' in line:
                 self.fd.write(',\n            title="%s"' % line[16:-1])

@@ -2600,8 +2600,12 @@ if __name__ == "__main__":
                 elif ' = options[' in line:
                     inLine = line.split(' = options')
                     if 'output' not in inLine[1]:
-                        inLine = '{}=request.inputs{}[0].file'.format(
-                            inLine[0], (inLine[1])[:-2])
+                        if 'input' in inLine[1]:
+                            inLine = '{}=request.inputs{}[0].file'.format(
+                                inLine[0], (inLine[1])[:-2])
+                        else:
+                            inLine = '{}=request.inputs{}[0].data'.format(
+                                inLine[0], (inLine[1])[:-2])
                     else:
                         rank += 1
                         lastOutput = '"output%d"' % rank

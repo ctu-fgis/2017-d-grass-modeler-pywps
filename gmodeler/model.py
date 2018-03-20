@@ -2596,8 +2596,8 @@ if __name__ == "__main__":
                     break
                 elif line[0:15] == '    run_command':
                     self.fd.write("""        Module{}""".format(line[15:]))
-                elif ' = options[' in line:
-                    inLine = line.split(' = options')
+                elif '=options[' in line:
+                    inLine = line.split('=options')
                     if 'output' not in inLine[1]:
                         if 'input' in inLine[1]:
                             inLine = '{}=request.inputs{}[0].file'.format(
@@ -2772,7 +2772,7 @@ def cleanup():
             self._writePythonItem(item,
                                   variables=item.GetParameterizedParams())
 
-        self.fd.write("\n    return 0\n")
+        self.fd.write("    return 0\n")
 
         for item in modelItems:
             if item.GetParameterizedParams()['flags']:
@@ -2921,18 +2921,18 @@ if __name__ == "__main__":
                     #    foundVar = True
 
                 if foundVar or ptype != 'string':
-                    params.append("%s = %s" % (name, value))
+                    params.append("%s=%s" % (name, value))
                 else:
-                    params.append('%s = "%s"' % (name, value))
+                    params.append('%s="%s"' % (name, value))
 
         ret += '"%s"' % task.get_name()
         if flags:
-            ret += ",\n%sflags = '%s'" % (' ' * cmdIndent, flags)
+            ret += ",\n%sflags='%s'" % (' ' * cmdIndent, flags)
             if itemParameterizedFlags:
                 ret += ' + getParameterizedFlags(options, [%s])' % (
                     itemParameterizedFlags)
         elif itemParameterizedFlags:
-            ret += ',\n%sflags = getParameterizedFlags(options, [%s])' % (
+            ret += ',\n%sflags=getParameterizedFlags(options, [%s])' % (
                 ' ' * cmdIndent,
                 itemParameterizedFlags)
 

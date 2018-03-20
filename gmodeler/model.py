@@ -2586,13 +2586,12 @@ if __name__ == "__main__":
         self.fd.close()
 
     def _insertPythonScript(self, linePos):
-        rank = 0
         for line in self.readPythonScript[linePos:]:
             if line[0] != '#':
                 if line[4:10] == 'return':
                     self.fd.write('\n        response.outputs'
-                                  '["output1"].file = {}\n'.format(lastOutput))
-                    # TODO: Make better (it doesn't have to be "output1")
+                                  '[{}].file = {}\n'.format(lastOutput,
+                                                            lastOutput))
                     self.fd.write('\n        return response\n')
                     break
                 elif line[0:15] == '    run_command':
@@ -2607,8 +2606,7 @@ if __name__ == "__main__":
                             inLine = '{}=request.inputs{}[0].data'.format(
                                 inLine[0], (inLine[1])[:-2])
                     else:
-                        rank += 1
-                        lastOutput = '"output%d"' % rank
+                        lastOutput = inLine[1][1:-3]
                         inLine = '%s=%s' % (inLine[0], lastOutput)
                     self.fd.write(inLine[1:])
                     if line[-2] == ',':

@@ -2042,6 +2042,11 @@ class PyWPSPanel(wx.Panel):
         :return: True on refresh
         :return: False script hasn't been updated
         """
+
+        if len(self.parent.GetModel().GetItems()) == 0:
+            self.body.SetText('')
+            return True
+
         if self.body.modified:
             dlg = wx.MessageDialog(
                 self,
@@ -2073,6 +2078,7 @@ class PyWPSPanel(wx.Panel):
             os.chmod(self.pyFilename, mode | stat.S_IXUSR)
 
         pywpsfd = grass.tempfile()
+
         WritePyWPSFile(pywpsfd, pyfd.name)
         fd2 = open(pywpsfd, 'rb')
         self.body.SetText(fd2.read())

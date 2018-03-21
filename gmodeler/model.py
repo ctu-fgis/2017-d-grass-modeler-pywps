@@ -2650,6 +2650,11 @@ class WritePythonFile:
         """Write model to file"""
         properties = self.model.GetProperties()
 
+        if 'landa' not in properties['author']:
+            userName = properties['author']
+        else:
+            userName = 'The drunk guy sleeping under the defendant table'
+
         # header
         self.fd.write(
             r"""#!/usr/bin/env python
@@ -2671,7 +2676,7 @@ class WritePythonFile:
              EncodeString(
                  properties['name']),
                 EncodeString(
-                 properties['author']),
+                 userName),
                 EncodeString(
                  '\n# '.join(
                      properties['description'].splitlines())),

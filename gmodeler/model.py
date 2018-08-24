@@ -2730,13 +2730,14 @@ class WritePythonFile:
                     desc = flag['description']
                 self.fd.write(
                 r"""#%%option
-#%% key: %s%s
+#%% key: %s_%s%s
 #%% description: %s
 #%% required: yes
 #%% type: string
 #%% options: True, False
 #%% guisection: Flags
-""" % (flag['name'], item.GetId(), desc))
+""" % (flag['name'], re.sub('[^a-zA-Z]+', '', item.GetLabel()),
+       item.GetId(), desc))
                 if flag['value']:
                     self.fd.write("#%% answer: %s\n" % flag['value'])
                 else:
@@ -2750,10 +2751,11 @@ class WritePythonFile:
                     desc = param['description']
                 self.fd.write(
                 r"""#%%option
-#%% key: %s%s
+#%% key: %s_%s%s
 #%% description: %s
 #%% required: yes
-""" % (param['name'], item.GetId(), desc))
+""" % (param['name'], re.sub('[^a-zA-Z]+', '', item.GetLabel()),
+       item.GetId(), desc))
                 if param['type'] != 'float':
                     self.fd.write('#%% type: %s\n' % param['type'])
                 else:
@@ -2925,12 +2927,16 @@ if __name__ == "__main__":
         for f in opts['flags']:
             if f.get('name') in parameterizedFlags and len(f.get('name')) == 1:
                 if len(itemParameterizedFlags)>0:
-                    itemParameterizedFlags = '{}, "{}{}"'.format(
-                        itemParameterizedFlags, f.get('name'),
+                    itemParameterizedFlags = '{}, "{}_{}{}"'.format(
+                        itemParameterizedFlags,
+                        f.get('name'),
+                        re.sub('[^a-zA-Z]+', '', item.GetLabel()),
                         str(item.GetId()))
                 else:
-                    itemParameterizedFlags = '{}"{}{}"'.format(
-                        itemParameterizedFlags, f.get('name'),
+                    itemParameterizedFlags = '{}"{}_{}{}"'.format(
+                        itemParameterizedFlags,
+                        f.get('name'),
+                        re.sub('[^a-zA-Z]+', '', item.GetLabel()),
                         str(item.GetId()))
             if f.get('value', False):
                 name = f.get('name', '')
@@ -2949,7 +2955,9 @@ if __name__ == "__main__":
 
                 if name in parameterizedParams:
                     foundVar = True
-                    value = 'options["%s%s"]' % (name, item.GetId())
+                    value = 'options["{}_{}{}"]'.format(
+                        name, re.sub('[^a-zA-Z]+','', item.GetLabel()),
+                        item.GetId())
                 #for var in sorted(variables, key=len, reverse=True):
                     #data = variables[var]
                     #if '%' + var in value:

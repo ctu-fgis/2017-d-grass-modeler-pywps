@@ -2761,11 +2761,8 @@ class WritePythonFile:
                 else:
                     self.fd.write('#% type: double\n')
                 if param['key_desc']:
-                    self.fd.write("#%% key_desc: %s" % (param['key_desc'][0]))
-                    if len(param['key_desc']) > 1:
-                        for key_desc in param['key_desc'][1:]:
-                            self.fd.write(", %s" % (key_desc))
-
+                    self.fd.write("#%% key_desc: ")
+                    self.fd.write(', '.join(param['key_desc']))
                     self.fd.write("\n")
                 if param['value']:
                     self.fd.write("#%% answer: %s\n" % param['value'])
@@ -2933,8 +2930,7 @@ if __name__ == "__main__":
                         re.sub('[^a-zA-Z]+', '', item.GetLabel()),
                         str(item.GetId()))
                 else:
-                    itemParameterizedFlags = '{}"{}_{}{}"'.format(
-                        itemParameterizedFlags,
+                    itemParameterizedFlags = '"{}_{}{}"'.format(
                         f.get('name'),
                         re.sub('[^a-zA-Z]+', '', item.GetLabel()),
                         str(item.GetId()))
@@ -2958,11 +2954,6 @@ if __name__ == "__main__":
                     value = 'options["{}_{}{}"]'.format(
                         name, re.sub('[^a-zA-Z]+','', item.GetLabel()),
                         item.GetId())
-                #for var in sorted(variables, key=len, reverse=True):
-                    #data = variables[var]
-                    #if '%' + var in value:
-                    #    value = self._substituteVariable(value, var, data)
-                    #    foundVar = True
 
                 if foundVar or ptype != 'string':
                     params.append("%s=%s" % (name, value))

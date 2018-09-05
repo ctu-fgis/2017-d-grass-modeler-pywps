@@ -28,6 +28,7 @@ import tempfile
 import copy
 import re
 import random
+import six
 
 import wx
 from wx.lib import ogl
@@ -52,7 +53,7 @@ from gui_core.dialogs import GetImageHandlers, TextEntryDialog
 from gui_core.ghelp import ShowAboutDialog
 from gui_core.preferences import PreferencesBaseDialog
 from core.settings import UserSettings
-from gui_core.menu import Menu
+from gui_core.menu import Menu as Menubar
 from gmodeler.menudata import ModelerMenuData
 from gui_core.forms import GUI
 from gmodeler.preferences import PreferencesDialog, PropertiesDialog
@@ -62,6 +63,8 @@ from gui_core.pystc import PyStc
 from gmodeler.giface import GraphicalModelerGrassInterface
 from gmodeler.model import *
 from gmodeler.dialogs import *
+from gui_core.wrap import Button, StaticText, StaticBox, TextCtrl, \
+    Menu, StockCursor, EmptyBitmap
 
 wxModelDone, EVT_MODEL_DONE = NewEvent()
 
@@ -90,8 +93,8 @@ class ModelFrame(wx.Frame):
         self.randomness = 40  # random layout
 
         self.cursors = {
-            "default": wx.StockCursor(wx.CURSOR_ARROW),
-            "cross": wx.StockCursor(wx.CURSOR_CROSS),
+            "default": StockCursor(wx.CURSOR_ARROW),
+            "cross": StockCursor(wx.CURSOR_CROSS),
         }
 
         wx.Frame.__init__(self, parent=parent, id=id, title=title, **kwargs)
@@ -103,7 +106,7 @@ class ModelFrame(wx.Frame):
                     'grass.ico'),
                 wx.BITMAP_TYPE_ICO))
 
-        self.menubar = Menu(
+        self.menubar = Menubar(
             parent=self,
             model=ModelerMenuData().GetModel(
                 separators=True))
@@ -391,7 +394,7 @@ class ModelFrame(wx.Frame):
         dlg.Init(properties)
         if dlg.ShowModal() == wx.ID_OK:
             self.ModelChanged()
-            for key, value in dlg.GetValues().iteritems():
+            for key, value in six.iteritems(dlg.GetValues()):
                 properties[key] = value
             for action in self.model.GetItems(objType=ModelAction):
                 action.GetTask().set_flag('overwrite', properties['overwrite'])
@@ -709,7 +712,7 @@ class ModelFrame(wx.Frame):
                 ymaxImg = ymax
         size = wx.Size(int(xmaxImg - xminImg) + 50,
                        int(ymaxImg - yminImg) + 50)
-        bitmap = wx.EmptyBitmap(width=size.width, height=size.height)
+        bitmap = EmptyBitmap(width=size.width, height=size.height)
 
         filetype, ltype = GetImageHandlers(wx.ImageFromBitmap(bitmap))
 
@@ -737,10 +740,8 @@ class ModelFrame(wx.Frame):
             dc.SetBackground(wx.WHITE_BRUSH)
             dc.SetBackgroundMode(wx.SOLID)
 
-            dc.BeginDrawing()
             self.canvas.GetDiagram().Clear(dc)
             self.canvas.GetDiagram().Redraw(dc)
-            dc.EndDrawing()
 
             bitmap.SaveFile(path, fileType)
             self.SetStatusText(_("Model exported to <%s>") % path)
@@ -1131,7 +1132,7 @@ class ModelFrame(wx.Frame):
         :return: False on failure
         """
         self.ModelChanged(False)
-        tmpfile = tempfile.TemporaryFile(mode='w+b')
+        tmpfile = tempfile.TemporaryFile(mode='w+')
         try:
             WriteModelFile(fd=tmpfile, model=self.model)
         except Exception:
@@ -1506,7 +1507,7 @@ class ModelEvtHandler(ogl.ShapeEvtHandler):
         shape = self.GetShape()
         self._onSelectShape(shape)
 
-        popupMenu = wx.Menu()
+        popupMenu = Menu()
         popupMenu.Append(self.popupID['remove'], text=_('Remove'))
         self.frame.Bind(wx.EVT_MENU, self.OnRemove, id=self.popupID['remove'])
         if isinstance(shape, ModelAction) or isinstance(shape, ModelLoop):
@@ -1732,7 +1733,7 @@ class VariablePanel(wx.Panel):
 
         wx.Panel.__init__(self, parent=parent, id=id, **kwargs)
 
-        self.listBox = wx.StaticBox(
+        self.listBox = StaticBox(
             parent=self, id=wx.ID_ANY, label=" %s " %
             _("List of variables - right-click to delete"))
 
@@ -1746,9 +1747,9 @@ class VariablePanel(wx.Panel):
             frame=self.parent)
 
         # add new category
-        self.addBox = wx.StaticBox(parent=self, id=wx.ID_ANY,
-                                   label=" %s " % _("Add new variable"))
-        self.name = wx.TextCtrl(parent=self, id=wx.ID_ANY)
+        self.addBox = StaticBox(parent=self, id=wx.ID_ANY,
+                                label=" %s " % _("Add new variable"))
+        self.name = TextCtrl(parent=self, id=wx.ID_ANY)
         wx.CallAfter(self.name.SetFocus)
         self.type = wx.Choice(parent=self, id=wx.ID_ANY,
                               choices=[_("integer"),
@@ -1761,12 +1762,12 @@ class VariablePanel(wx.Panel):
                                        _("file"),
                                        _("dir")])
         self.type.SetSelection(2)  # string
-        self.value = wx.TextCtrl(parent=self, id=wx.ID_ANY)
-        self.desc = wx.TextCtrl(parent=self, id=wx.ID_ANY)
+        self.value = TextCtrl(parent=self, id=wx.ID_ANY)
+        self.desc = TextCtrl(parent=self, id=wx.ID_ANY)
 
         # buttons
-        self.btnAdd = wx.Button(parent=self, id=wx.ID_ADD)
-        self.btnAdd.SetToolTipString(_("Add new variable to the model"))
+        self.btnAdd = Button(parent=self, id=wx.ID_ADD)
+        self.btnAdd.SetToolTip(_("Add new variable to the model"))
         self.btnAdd.Enable(False)
 
         # bindings
@@ -1785,28 +1786,28 @@ class VariablePanel(wx.Panel):
 
         addSizer = wx.StaticBoxSizer(self.addBox, wx.VERTICAL)
         gridSizer = wx.GridBagSizer(hgap=5, vgap=5)
-        gridSizer.Add(wx.StaticText(parent=self, id=wx.ID_ANY,
-                                    label="%s:" % _("Name")),
+        gridSizer.Add(StaticText(parent=self, id=wx.ID_ANY,
+                                 label="%s:" % _("Name")),
                       flag=wx.ALIGN_CENTER_VERTICAL,
                       pos=(0, 0))
         gridSizer.Add(self.name,
                       pos=(0, 1),
                       flag=wx.EXPAND)
-        gridSizer.Add(wx.StaticText(parent=self, id=wx.ID_ANY,
-                                    label="%s:" % _("Data type")),
+        gridSizer.Add(StaticText(parent=self, id=wx.ID_ANY,
+                                 label="%s:" % _("Data type")),
                       flag=wx.ALIGN_CENTER_VERTICAL,
                       pos=(0, 2))
         gridSizer.Add(self.type,
                       pos=(0, 3))
-        gridSizer.Add(wx.StaticText(parent=self, id=wx.ID_ANY,
-                                    label="%s:" % _("Default value")),
+        gridSizer.Add(StaticText(parent=self, id=wx.ID_ANY,
+                                 label="%s:" % _("Default value")),
                       flag=wx.ALIGN_CENTER_VERTICAL,
                       pos=(1, 0))
         gridSizer.Add(self.value,
                       pos=(1, 1), span=(1, 3),
                       flag=wx.EXPAND)
-        gridSizer.Add(wx.StaticText(parent=self, id=wx.ID_ANY,
-                                    label="%s:" % _("Description")),
+        gridSizer.Add(StaticText(parent=self, id=wx.ID_ANY,
+                                 label="%s:" % _("Description")),
                       flag=wx.ALIGN_CENTER_VERTICAL,
                       pos=(2, 0))
         gridSizer.Add(self.desc,
@@ -1856,7 +1857,7 @@ class VariablePanel(wx.Panel):
     def UpdateModelVariables(self):
         """Update model variables"""
         variables = dict()
-        for values in self.list.GetData().itervalues():
+        for values in six.itervalues(self.list.GetData()):
             name = values[0]
             variables[name] = {'type': str(values[1])}
             if values[2]:
@@ -1887,7 +1888,7 @@ class ItemPanel(wx.Panel):
 
         wx.Panel.__init__(self, parent=parent, id=id, **kwargs)
 
-        self.listBox = wx.StaticBox(
+        self.listBox = StaticBox(
             parent=self, id=wx.ID_ANY, label=" %s " %
             _("List of items - right-click to delete"))
 
@@ -1904,9 +1905,9 @@ class ItemPanel(wx.Panel):
                 3],
             frame=self.parent)
 
-        self.btnMoveUp = wx.Button(parent=self, id=wx.ID_UP)
-        self.btnMoveDown = wx.Button(parent=self, id=wx.ID_DOWN)
-        self.btnRefresh = wx.Button(parent=self, id=wx.ID_REFRESH)
+        self.btnMoveUp = Button(parent=self, id=wx.ID_UP)
+        self.btnMoveDown = Button(parent=self, id=wx.ID_DOWN)
+        self.btnRefresh = Button(parent=self, id=wx.ID_REFRESH)
 
         self.btnMoveUp.Bind(wx.EVT_BUTTON, self.OnMoveItemsUp)
         self.btnMoveDown.Bind(wx.EVT_BUTTON, self.OnMoveItemsDown)
@@ -2205,18 +2206,18 @@ class PythonPanel(wx.Panel):
 
         self.filename = None  # temp file to run
 
-        self.bodyBox = wx.StaticBox(parent=self, id=wx.ID_ANY,
-                                    label=" %s " % _("Python script"))
+        self.bodyBox = StaticBox(parent=self, id=wx.ID_ANY,
+                                 label=" %s " % _("Python script"))
         self.body = PyStc(parent=self, statusbar=self.parent.GetStatusBar())
 
-        self.btnRun = wx.Button(parent=self, id=wx.ID_ANY, label=_("&Run"))
-        self.btnRun.SetToolTipString(_("Run python script"))
+        self.btnRun = Button(parent=self, id=wx.ID_ANY, label=_("&Run"))
+        self.btnRun.SetToolTip(_("Run python script"))
         self.Bind(wx.EVT_BUTTON, self.OnRun, self.btnRun)
-        self.btnSaveAs = wx.Button(parent=self, id=wx.ID_SAVEAS)
-        self.btnSaveAs.SetToolTipString(_("Save python script to file"))
+        self.btnSaveAs = Button(parent=self, id=wx.ID_SAVEAS)
+        self.btnSaveAs.SetToolTip(_("Save python script to file"))
         self.Bind(wx.EVT_BUTTON, self.OnSaveAs, self.btnSaveAs)
-        self.btnRefresh = wx.Button(parent=self, id=wx.ID_REFRESH)
-        self.btnRefresh.SetToolTipString(_("Refresh python script based on the model.\n"
+        self.btnRefresh = Button(parent=self, id=wx.ID_REFRESH)
+        self.btnRefresh.SetToolTip(_("Refresh python script based on the model.\n"
                                            "It will discards all local changes."))
         self.Bind(wx.EVT_BUTTON, self.OnRefresh, self.btnRefresh)
 
@@ -2361,7 +2362,7 @@ class PythonPanel(wx.Panel):
             if ret == wx.ID_NO:
                 return False
 
-        fd = tempfile.TemporaryFile()
+        fd = tempfile.TemporaryFile(mode='r+')
         WritePythonFile(fd, self.parent.GetModel())
         fd.seek(0)
         self.body.SetText(fd.read())

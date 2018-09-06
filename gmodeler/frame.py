@@ -89,6 +89,7 @@ class ModelFrame(wx.Frame):
         self.searchDialog = None  # module search dialog
         self.baseTitle = title
         self.modelFile = None    # loaded model
+        self.start_time = None
         self.modelChanged = False
         self.randomness = 40  # random layout
 
@@ -330,7 +331,7 @@ class ModelFrame(wx.Frame):
             action = self.GetModel().GetItems()[event.pid]
             if hasattr(action, "task"):
                 action.Update(running=True)
-            if event.pid == self._gconsole.cmdThread.GetId() - 1:
+            if event.pid == self._gconsole.cmdThread.GetId() - 1 and self.start_time:
                 self.goutput.WriteCmdLog('({}) {} ({})'.format(
                     str(time.ctime()), _("Model computation finished"), time_elapsed(self.start_time)),
                                          notification=event.notification)

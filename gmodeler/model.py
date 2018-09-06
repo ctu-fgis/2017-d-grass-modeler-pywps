@@ -2763,7 +2763,7 @@ class WritePythonFile:
                 else:
                     self.fd.write('#% type: double\n')
                 if param['key_desc']:
-                    self.fd.write("#%% key_desc: ")
+                    self.fd.write("#% key_desc: ")
                     self.fd.write(', '.join(param['key_desc']))
                     self.fd.write("\n")
                 if param['value']:

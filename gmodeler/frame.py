@@ -17,7 +17,7 @@ This program is free software under the GNU General Public License
 (>=v2). Read the file COPYING that comes with GRASS for details.
 
 @author Martin Landa <landa.martin gmail.com>
-@PyWPS, Python parameterization and pyGUI Ondrej Pesek <pesej.ondrek gmail.com>
+@Python parameterization and pyGUI Ondrej Pesek <pesej.ondrek gmail.com>
 """
 
 import os
@@ -41,7 +41,7 @@ if globalvar.wxPythonPhoenix:
 else:
     import wx.lib.flatnotebook as FN
 from wx.lib.newevent import NewEvent
-
+    
 from core.utils import _
 from gui_core.widgets import GNotebook
 from core.gconsole        import GConsole, \
@@ -135,7 +135,6 @@ class ModelFrame(wx.Frame):
         self.itemPanel = ItemPanel(parent=self)
 
         self.pythonPanel = PythonPanel(parent=self)
-        self.pyWPSPanel = PyWPSPanel(parent=self)
 
         self._gconsole = GConsole(guiparent=self)
         self.goutput = GConsoleWindow(parent=self, gconsole=self._gconsole)
@@ -158,7 +157,7 @@ class ModelFrame(wx.Frame):
         self._gconsole.Bind(EVT_CMD_DONE, self.OnCmdDone)
         self.Bind(EVT_CMD_PREPARE, self.OnCmdPrepare)
         self.Bind(EVT_MODEL_DONE, self.OnModelDone)
-
+        
         self.notebook.AddPage(page=self.canvas, text=_('Model'), name='model')
         self.notebook.AddPage(
             page=self.itemPanel,
@@ -172,10 +171,6 @@ class ModelFrame(wx.Frame):
             page=self.pythonPanel,
             text=_('Python editor'),
             name='python')
-        self.notebook.AddPage(
-            page=self.pyWPSPanel,
-            text=_('PyWPS editor'),
-            name='pywps')
         self.notebook.AddPage(
             page=self.goutput,
             text=_('Command output'),
@@ -254,18 +249,13 @@ class ModelFrame(wx.Frame):
     def OnPageChanged(self, event):
         """Page in notebook changed"""
         page = event.GetSelection()
-        if page in [self.notebook.GetPageIndexByName('python'),
-                    self.notebook.GetPageIndexByName('pywps')]:
-            if self.pythonPanel.IsEmpty() or self.pyWPSPanel.IsEmpty():
+        if page == self.notebook.GetPageIndexByName('python'):
+            if self.pythonPanel.IsEmpty():
                 self.pythonPanel.RefreshScript()
-                self.pyWPSPanel.RefreshScript()
 
             if self.pythonPanel.IsModified():
                 self.SetStatusText(
                     _('Python script contains local modifications'), 0)
-            elif self.pyWPSPanel.IsModified():
-                self.SetStatusText(
-                    _('PyWPS script contains local modifications'), 0)
             else:
                 self.SetStatusText(_('Python script is up-to-date'), 0)
         elif page == self.notebook.GetPageIndexByName('items'):
@@ -321,8 +311,8 @@ class ModelFrame(wx.Frame):
                 stime = _("unknown")
 
             return stime
-
-        self.goutput.GetProgressBar().SetValue(0)
+        
+        self.goutput.GetProgressBar().SetValue(0)            
         self.goutput.WriteCmdLog('({}) {} ({})'.format(
             str(time.ctime()), _("Command finished"), time_elapsed(event.time)),
             notification=event.notification)
@@ -337,7 +327,7 @@ class ModelFrame(wx.Frame):
                                          notification=event.notification)
                 event = wxModelDone()
                 wx.PostEvent(self, event)
-
+                
         except IndexError:
             pass
 
@@ -414,7 +404,7 @@ class ModelFrame(wx.Frame):
         if vect:
             self._gconsole.RunCmd(['g.remove', '-f', 'type=vector',
                                    'name=%s' % ','.join(vect)])
-
+                
         self.SetStatusText(_("%d intermediate maps deleted from current mapset") %
                            int(len(rast) + len(rast3d) + len(vect)))
 
@@ -633,7 +623,7 @@ class ModelFrame(wx.Frame):
         """Computation finished
         """
         self.SetStatusText('', 0)
-
+        
         # restore original files
         if hasattr(self.model, "fileInput"):
             for finput in self.model.fileInput:
@@ -661,7 +651,7 @@ class ModelFrame(wx.Frame):
             if layers:
                 for layer in layers:
                     self._giface.GetLayerList().DeleteLayer(layer)
-
+                
             # add new map layer
             self._giface.GetLayerList().AddLayer(
                 ltype=data.GetPrompt(), name=data.GetValue(), checked=True,
@@ -1712,7 +1702,7 @@ class ModelEvtHandler(ogl.ShapeEvtHandler):
                 layers = self.frame._giface.GetLayerList().GetLayersByName(shape.GetValue())
                 for layer in layers:
                     self.frame._giface.GetLayerList().DeleteLayer(layer)
-
+                    
         except GException as e:
             GError(parent=self,
                    message='{}'.format(e))
@@ -1977,224 +1967,6 @@ class ItemPanel(wx.Panel):
         self.parent.ModelChanged()
 
 
-class PyWPSPanel(wx.Panel):
-
-    def __init__(self, parent, id=wx.ID_ANY,
-                 **kwargs):
-        """Model as pyWPS script
-        """
-        self.parent = parent
-
-        wx.Panel.__init__(self, parent=parent, id=id, **kwargs)
-
-        self.pyFilename = None  # temp file with python script
-
-        self.bodyBox = wx.StaticBox(parent=self, id=wx.ID_ANY,
-                                    label=" %s " % _("PyWPS script"))
-        self.body = PyStc(parent=self, statusbar=self.parent.GetStatusBar())
-
-        self.btnRun = wx.Button(parent=self, id=wx.ID_ANY, label=_("&Run"))
-        self.btnRun.SetToolTipString(_("Run PyWPS script"))
-        self.Bind(wx.EVT_BUTTON, self.OnRun, self.btnRun)
-        self.btnSaveAs = wx.Button(parent=self, id=wx.ID_SAVEAS)
-        self.btnSaveAs.SetToolTipString(_("Save PyWPS script to file"))
-        self.Bind(wx.EVT_BUTTON, self.OnSaveAs, self.btnSaveAs)
-        self.btnRefresh = wx.Button(parent=self, id=wx.ID_REFRESH)
-        self.btnRefresh.SetToolTipString(_(
-            "Refresh PyWPS script based on the python script.\n"
-            "It will discards all local changes."))
-        self.Bind(wx.EVT_BUTTON, self.OnRefresh, self.btnRefresh)
-
-        self._layout()
-
-    def _layout(self):
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        bodySizer = wx.StaticBoxSizer(self.bodyBox, wx.HORIZONTAL)
-        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        bodySizer.Add(self.body, proportion=1,
-                      flag=wx.EXPAND | wx.ALL, border=3)
-
-        btnSizer.Add(self.btnRefresh, proportion=0,
-                     flag=wx.LEFT | wx.RIGHT, border=5)
-        btnSizer.AddStretchSpacer()
-        btnSizer.Add(self.btnSaveAs, proportion=0,
-                     flag=wx.RIGHT | wx.ALIGN_RIGHT, border=5)
-        btnSizer.Add(self.btnRun, proportion=0,
-                     flag=wx.RIGHT | wx.ALIGN_RIGHT, border=5)
-
-        sizer.Add(bodySizer, proportion=1,
-                  flag=wx.EXPAND | wx.ALL, border=3)
-        sizer.Add(btnSizer, proportion=0,
-                  flag=wx.EXPAND | wx.ALL, border=3)
-
-        sizer.Fit(self)
-        sizer.SetSizeHints(self)
-        self.SetSizer(sizer)
-
-    def OnRun(self, event):
-        """Export PyWPS script"""
-
-        if not self.pyFilename:
-            self.pyFilename = grass.tempfile() # python script
-
-        try:
-            fd = open(self.pyFilename, "w")
-            fd.write(self.parent.pyWPSPanel.body.GetText())
-
-        except IOError as e:
-            GError(_("Unable to launch Python script. %s") % e,
-                   parent=self)
-            return
-        finally:
-            fd.close()
-            mode = stat.S_IMODE(os.lstat(self.pyFilename)[stat.ST_MODE])
-            os.chmod(self.pyFilename, mode | stat.S_IXUSR)
-
-        self.parent._gconsole.RunCmd(
-            [fd.name],
-            skipInterface=True, onDone=self.OnDone)
-
-        event.Skip()
-
-    def OnDone(self, event):
-        """PyWPS script finished"""
-        try_remove(self.pyFilename)
-        self.pyFilename = None
-
-    def SaveAs(self, force=False):
-        """Save python script to file
-
-        :return: filename
-        """
-        filename = ''
-        dlg = wx.FileDialog(
-            parent=self,
-            message=_("Choose file to save"),
-            defaultFile=os.path.basename(
-                self.parent.GetModelFile(
-                    ext=False)),
-            defaultDir=os.getcwd(),
-            wildcard=_("Python script (*.py)|*.py"),
-            style=wx.FD_SAVE)
-
-        if dlg.ShowModal() == wx.ID_OK:
-            filename = dlg.GetPath()
-
-        if not filename:
-            return ''
-
-        # check for extension
-        if filename[-3:] != ".py":
-            filename += ".py"
-
-        if os.path.exists(filename):
-            dlg = wx.MessageDialog(
-                self,
-                message=_(
-                    "File <%s> already exists. "
-                    "Do you want to overwrite this file?") %
-                filename,
-                caption=_("Save file"),
-                style=wx.YES_NO | wx.YES_DEFAULT | wx.ICON_QUESTION)
-            if dlg.ShowModal() == wx.ID_NO:
-                dlg.Destroy()
-                return ''
-
-            dlg.Destroy()
-
-        try:
-            fd = open(self.pyFilename, "w")
-            fd.write(self.parent.pythonPanel.body.GetText())
-
-        except IOError as e:
-            GError(_("Unable to launch Python script. %s") % e,
-                   parent=self)
-            return
-        finally:
-            fd.close()
-            mode = stat.S_IMODE(os.lstat(self.pyFilename)[stat.ST_MODE])
-            os.chmod(self.pyFilename, mode | stat.S_IXUSR)
-
-        WritePyWPSFile(filename, fd.name)
-
-        # executable file
-        os.chmod(filename, stat.S_IRWXU | stat.S_IWUSR)
-
-        return filename
-
-    def OnSaveAs(self, event):
-        """Save python script to file"""
-        self.SaveAs(force=False)
-        event.Skip()
-
-    def RefreshScript(self):
-        """Refresh Python script
-
-        :return: True on refresh
-        :return: False script hasn't been updated
-        """
-
-        if len(self.parent.GetModel().GetItems()) == 0:
-            self.body.SetText('')
-            return True
-
-        if self.body.modified:
-            dlg = wx.MessageDialog(
-                self,
-                message=_(
-                    "Python script is locally modificated. "
-                    "Refresh will discard all changes. "
-                    "Do you really want to continue?"),
-                caption=_("Update"),
-                style=wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.CENTRE)
-            ret = dlg.ShowModal()
-            dlg.Destroy()
-            if ret == wx.ID_NO:
-                return False
-
-        if not self.pyFilename:
-            self.pyFilename = grass.tempfile()
-
-        try:
-            pyfd = open(self.pyFilename, "w")
-            pyfd.write(self.parent.pythonPanel.body.GetText())
-
-        except IOError as e:
-            GError(_("Unable to launch Python script. %s") % e,
-                   parent=self)
-            return
-        finally:
-            pyfd.close()
-            mode = stat.S_IMODE(os.lstat(self.pyFilename)[stat.ST_MODE])
-            os.chmod(self.pyFilename, mode | stat.S_IXUSR)
-
-        pywpsfd = grass.tempfile()
-
-        WritePyWPSFile(pywpsfd, pyfd.name)
-        fd2 = open(pywpsfd, 'rb')
-        self.body.SetText(fd2.read())
-        fd2.close()
-
-        self.body.modified = False
-
-        return True
-
-    def OnRefresh(self, event):
-        """Refresh Python script"""
-        if self.RefreshScript():
-            self.parent.SetStatusText(_('Python script is up-to-date'), 0)
-        event.Skip()
-
-    def IsModified(self):
-        """Check if python script has been modified"""
-        return self.body.modified
-
-    def IsEmpty(self):
-        """Check if python script is empty"""
-        return len(self.body.GetText()) == 0
-
-
 class PythonPanel(wx.Panel):
 
     def __init__(self, parent, id=wx.ID_ANY,
@@ -2368,8 +2140,6 @@ class PythonPanel(wx.Panel):
         fd.seek(0)
         self.body.SetText(fd.read())
         fd.close()
-
-        self.parent.pyWPSPanel.RefreshScript()
 
         self.body.modified = False
 

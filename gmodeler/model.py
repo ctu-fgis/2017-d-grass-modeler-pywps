@@ -15,7 +15,6 @@ Classes:
  - model::ModelComment
  - model::ProcessModelFile
  - model::WriteModelFile
- - model::WritePyWPSFile
  - model::WritePythonFile
  - model::ModelParamDialog
 
@@ -25,7 +24,7 @@ This program is free software under the GNU General Public License
 (>=v2). Read the file COPYING that comes with GRASS for details.
 
 @author Martin Landa <landa.martin gmail.com>
-@PyWPS, Python parameterization and pyGUI Ondrej Pesek <pesej.ondrek gmail.com>
+@Python parameterization and pyGUI Ondrej Pesek <pesej.ondrek gmail.com>
 """
 
 import os
@@ -2049,7 +2048,7 @@ class ProcessModelFile:
             intermediate = False if data.find('intermediate') is None else True
 
             display = False if data.find('display') is None else True
-
+            
             rels = list()
             for rel in data.findall('relation'):
                 defrel = {'id': int(rel.get('id', -1)),
@@ -2509,144 +2508,6 @@ class WriteModelFile:
                  comment.GetLabel())))
 
 
-class WritePyWPSFile:
-
-    def __init__(self, filename, pythonScript):
-        """Class for exporting model to PyWPS script
-
-        """
-        pythonScript = open(pythonScript, 'rb')
-        self.readPythonScript = pythonScript.readlines()
-        pythonScript.close()
-
-        self.fd = open(filename, 'w')
-        self._writePyWPS()
-
-    def _writePyWPS(self):
-        """Write PyWPS model to file"""
-
-        linePos = 18
-        self.fd.write('#!/usr/bin/env python\n\n')
-
-        for line in self.readPythonScript[linePos-1:]:
-            if 'def main' in line:
-                break
-            elif 'import' in line:
-                self.fd.write(line)
-
-        for line in self.readPythonScript[:linePos]:
-            if '# MODULE:       ' in line:
-                scriptIdentifier = line.split('       ')[1][:-1]
-            elif '#% description: ' in line:
-                scriptAbstract = line.split('description: ')[1][:-1]
-
-        self.fd.write(r"""from pywps import Process, LiteralInput, ComplexInput, ComplexOutput, Format
-from grass.pygrass.modules import Module
-from pywps.app.Service import Service
-from pywps.inout.formats import FORMATS
-
-supFormats = [Format(form.mime_type) for form in FORMATS]
-
-class Model(Process):
-    def __init__(self):
-        inputs = list()
-        outputs = list()
-""" )
-        for line in self.readPythonScript[18:]:
-            linePos = linePos + 1
-            if '#% key:' in line:
-                if 'output' not in line:
-                    if 'input' in line:
-                        self.fd.write("""
-        inputs.append(ComplexInput(identifier='{}',
-            supported_formats=supFormats""".format(line[8:-1]))
-                    else:
-                        self.fd.write("""
-        inputs.append(LiteralInput(identifier='{}'""".format(line[8:-1]))
-                else:
-                    self.fd.write("""
-        outputs.append(ComplexOutput(identifier='{}',
-            supported_formats=supFormats""".format(line[8:-1]))
-                lastItem = line[8:-1]
-            # TODO: (diversify literal/complex, other outputs than "output")
-            elif '#% description:' in line:
-                self.fd.write(',\n            title="%s"' % line[16:-1])
-            elif '#% type:' in line:
-                if 'input' not in lastItem and 'output' not in lastItem:
-                    if line[9:-1] != 'double':
-                        self.fd.write(',\n            '
-                                      'data_type="{}"))'.format(line[9:-1]))
-                    else:
-                        self.fd.write(',\n            data_type="float"))')
-                else:
-                    self.fd.write('))')
-            elif 'def main' in line:
-                break
-
-        self.fd.write(r"""
-
-        super(Model, self).__init__(
-            self._handler,
-            identifier='%s',
-            title='%s',
-            inputs=inputs,
-            outputs=outputs,
-            abstract='%s',
-            version='1.0',
-            store_supported=True,
-            status_supported=True)""" % (scriptIdentifier, scriptIdentifier,
-                                         scriptAbstract))
-
-        self.fd.write("""
-
-    @staticmethod
-    def _handler(request, response):
-""")
-        self._insertPythonScript(linePos)
-
-        self.fd.write("""
-if __name__ == "__main__":
-    process = Model()
-
-    processes = [Model()]
-    application = Service(processes)""")
-
-        self.fd.close()
-
-    def _insertPythonScript(self, linePos):
-
-        lastOutput = '"output1"'
-        for line in self.readPythonScript[linePos:]:
-            if line[0] != '#':
-                if line[4:10] == 'return':
-                    self.fd.write('\n        response.outputs'
-                                  '[{}].file = {}\n'.format(lastOutput,
-                                                            lastOutput))
-                    self.fd.write('\n        return response\n')
-                    break
-                elif line[0:15] == '    run_command':
-                    self.fd.write("""        Module{}""".format(line[15:]))
-                elif '=options[' in line:
-                    inLine = line.split('=options')
-                    if 'output' not in inLine[1]:
-                        if 'input' in inLine[1]:
-                            inLine = '{}=request.inputs{}[0].file'.format(
-                                inLine[0], (inLine[1])[:-2])
-                        else:
-                            inLine = '{}=request.inputs{}[0].data'.format(
-                                inLine[0], (inLine[1])[:-2])
-                    else:
-                        lastOutput = inLine[1][1:-3]
-                        inLine = '%s=%s' % (inLine[0], lastOutput)
-                    self.fd.write(inLine[1:])
-                    if line[-2] == ',':
-                        self.fd.write(',\n')
-                    else:
-                        self.fd.write(')\n')
-                else:
-                    self.fd.write(line[1:])
-
-
 class WritePythonFile:
 
     def __init__(self, fd, model):
@@ -2680,11 +2541,6 @@ class WritePythonFile:
         """Write model to file"""
         properties = self.model.GetProperties()
 
-        if 'landa' not in properties['author']:
-            userName = properties['author']
-        else:
-            userName = 'The drunk guy sleeping under the defendant table'
-
         # header
         self.fd.write(
             r"""#!/usr/bin/env python
@@ -2706,8 +2562,7 @@ class WritePythonFile:
              EncodeString(
                  properties['name']),
                 EncodeString(
-                 userName),  # TODO: change to properties['author'] to ignore
-                             # the easter egg
+                 properties['author']),
                 EncodeString(
                  '\n# '.join(
                      properties['description'].splitlines())),

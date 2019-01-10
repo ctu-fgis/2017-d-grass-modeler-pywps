@@ -25,7 +25,7 @@ This program is free software under the GNU General Public License
 (>=v2). Read the file COPYING that comes with GRASS for details.
 
 @author Martin Landa <landa.martin gmail.com>
-@PyWPS, Python parameterization and pyGUI Ondrej Pesek <pesej.ondrek gmail.com>
+@PyWPS, Python parameterization Ondrej Pesek <pesej.ondrek gmail.com>
 """
 
 import os
@@ -2680,7 +2680,7 @@ class WritePythonFile:
         """Write model to file"""
         properties = self.model.GetProperties()
 
-        if 'landa' not in properties['author']:
+        if 'landa' not in properties['author'] and 'martin' not in properties['author']:
             userName = properties['author']
         else:
             userName = 'The drunk guy sleeping under the defendant table'
@@ -2689,39 +2689,33 @@ class WritePythonFile:
         self.fd.write(
             r"""#!/usr/bin/env python
 #
-#%s
+#{header_begin}
 #
-# MODULE:       %s
+# MODULE:       {module_name}
 #
-# AUTHOR(S):    %s
+# AUTHOR(S):    {author}
 #
-# PURPOSE:      %s
+# PURPOSE:      {purpose}
 #
-# DATE:         %s
+# DATE:         {date}
 #
-#%s
-""" %
-            ('#' *
-             77,
-             EncodeString(
-                 properties['name']),
-                EncodeString(
-                 userName),  # TODO: change to properties['author'] to ignore
-                             # the easter egg
-                EncodeString(
-                 '\n# '.join(
-                     properties['description'].splitlines())),
-                time.asctime(),
-                '#' *
-                77))
+#{header_end}
+""".format(header_begin='#' * 77,
+           module_name=EncodeString(properties['name']),
+           author=EncodeString(properties['author']),
+           purpose=EncodeString(
+               '\n# '.join(properties['description'].splitlines())),
+           date=time.asctime(),
+           header_end='#' * 77))
 
         # UI
         self.fd.write(
             r"""
-#%%module
-#%% description: %s
-#%%end
-""" % (EncodeString(' '.join(properties['description'].splitlines()))))
+#%module
+#% description: {description}
+#%end
+""".format(description=EncodeString(
+                ' '.join(properties['description'].splitlines()))))
 
         modelItems = self.model.GetItems()
         for item in modelItems:
@@ -2731,17 +2725,17 @@ class WritePythonFile:
                 else:
                     desc = flag['description']
                 self.fd.write(
-                r"""#%%option
-#%% key: %s_%s%s
-#%% description: %s
-#%% required: yes
-#%% type: string
-#%% options: True, False
-#%% guisection: Flags
-""" % (flag['name'], re.sub('[^a-zA-Z]+', '', item.GetLabel()),
-       item.GetId(), desc))
+                r"""#%option
+#% key: {flag_name}
+#% description: {description}
+#% required: yes
+#% type: string
+#% options: True, False
+#% guisection: Flags
+""".format(flag_name=self._getParamName(flag['name'], item),
+           description=desc))
                 if flag['value']:
-                    self.fd.write("#%% answer: %s\n" % flag['value'])
+                    self.fd.write("#% answer: {}\n".format(flag['value']))
                 else:
                     self.fd.write("#% answer: False\n")
                 self.fd.write("#%end\n")
@@ -2752,14 +2746,14 @@ class WritePythonFile:
                 else:
                     desc = param['description']
                 self.fd.write(
-                r"""#%%option
-#%% key: %s_%s%s
-#%% description: %s
-#%% required: yes
-""" % (param['name'], re.sub('[^a-zA-Z]+', '', item.GetLabel()),
-       item.GetId(), desc))
+                r"""#%option
+#% key: {param_name}
+#% description: {description}
+#% required: yes
+""".format(param_name=self._getParamName(param['name'], item),
+           description=desc))
                 if param['type'] != 'float':
-                    self.fd.write('#%% type: %s\n' % param['type'])
+                    self.fd.write('#% type: {}\n'.format(param['type']))
                 else:
                     self.fd.write('#% type: double\n')
                 if param['key_desc']:
@@ -2767,7 +2761,7 @@ class WritePythonFile:
                     self.fd.write(', '.join(param['key_desc']))
                     self.fd.write("\n")
                 if param['value']:
-                    self.fd.write("#%% answer: %s\n" % param['value'])
+                    self.fd.write("#% answer: {}\n".format(param['value']))
                 self.fd.write("#%end\n")
 
         # import modules
@@ -2820,7 +2814,7 @@ def getParameterizedFlags(paramFlags, itemFlags):
 
                 self.fd.write("""    for i in [key for key, value in paramFlags.iteritems() if value == 'True']:
         if i in itemFlags:
-            fl += i[0]
+            fl += i[-1]
 
     return fl
 """)
@@ -2913,35 +2907,22 @@ if __name__ == "__main__":
         ret = ''
         flags = ''
         params = list()
-        parameterizedParams = list()
-        parameterizedFlags = list()
-        itemParameterizedFlags = ''
-
-        for param in variables['params']:
-            parameterizedParams.append(param['name'])
-
-        for param in variables['flags']:
-            parameterizedFlags.append(param['name'])
+        itemParameterizedFlags = list()
+        parameterizedParams = [v['name'] for v in variables['params']]
+        parameterizedFlags = [v['name'] for v in variables['flags']]
 
         for f in opts['flags']:
             if f.get('name') in parameterizedFlags and len(f.get('name')) == 1:
-                if len(itemParameterizedFlags)>0:
-                    itemParameterizedFlags = '{}, "{}_{}{}"'.format(
-                        itemParameterizedFlags,
-                        f.get('name'),
-                        re.sub('[^a-zA-Z]+', '', item.GetLabel()),
-                        str(item.GetId()))
-                else:
-                    itemParameterizedFlags = '"{}_{}{}"'.format(
-                        f.get('name'),
-                        re.sub('[^a-zA-Z]+', '', item.GetLabel()),
-                        str(item.GetId()))
+                itemParameterizedFlags.append(
+                    '"{}"'.format(self._getParamName(f.get('name'), item)))
             if f.get('value', False):
                 name = f.get('name', '')
                 if len(name) > 1:
                     params.append('%s = True' % name)
                 else:
                     flags += name
+
+        itemParameterizedFlags = ', '.join(itemParameterizedFlags)
 
         for p in opts['params']:
             name = p.get('name', None)
@@ -2953,23 +2934,23 @@ if __name__ == "__main__":
 
                 if name in parameterizedParams:
                     foundVar = True
-                    value = 'options["{}_{}{}"]'.format(
-                        name, re.sub('[^a-zA-Z]+','', item.GetLabel()),
-                        item.GetId())
+                    value = 'options["{}"]'.format(self._getParamName(name,
+                                                                      item))
 
                 if foundVar or ptype != 'string':
-                    params.append("%s=%s" % (name, value))
+                    params.append("{}={}".format(name, value))
                 else:
-                    params.append('%s="%s"' % (name, value))
+                    params.append('{}="{}"'.format(name, value))
 
         ret += '"%s"' % task.get_name()
         if flags:
-            ret += ",\n%sflags='%s'" % (' ' * cmdIndent, flags)
+            ret += ",\n{indent}flags='{fl}'".format(indent=' ' * cmdIndent,
+                                                    fl=flags)
             if itemParameterizedFlags:
-                ret += ' + getParameterizedFlags(options, [%s])' % (
+                ret += ' + getParameterizedFlags(options, [{}])'.format(
                     itemParameterizedFlags)
         elif itemParameterizedFlags:
-            ret += ',\n%sflags=getParameterizedFlags(options, [%s])' % (
+            ret += ',\n{}flags=getParameterizedFlags(options, [{}])'.format(
                 ' ' * cmdIndent,
                 itemParameterizedFlags)
 
@@ -3022,6 +3003,11 @@ if __name__ == "__main__":
 
         return result.strip('+')
 
+    def _getParamName(self, parameter_name, item):
+        return '{module_name}{module_id}_{param_name}'.format(
+            module_name=re.sub('[^a-zA-Z]+', '', item.GetLabel()),
+            module_id=item.GetId(),
+            param_name=parameter_name)
 
 class ModelParamDialog(wx.Dialog):
 

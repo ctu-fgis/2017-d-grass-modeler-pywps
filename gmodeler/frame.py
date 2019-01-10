@@ -17,7 +17,7 @@ This program is free software under the GNU General Public License
 (>=v2). Read the file COPYING that comes with GRASS for details.
 
 @author Martin Landa <landa.martin gmail.com>
-@Python parameterization and pyGUI Ondrej Pesek <pesej.ondrek gmail.com>
+@Python parameterization Ondrej Pesek <pesej.ondrek gmail.com>
 """
 
 import os

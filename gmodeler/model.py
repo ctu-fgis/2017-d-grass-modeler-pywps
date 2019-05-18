@@ -2543,30 +2543,12 @@ class Model(Process):
         outputs = list()
 """)
 
-        for line in self.readPythonScript[linePos-1:]:
-            if 'def main' in line:
-                break
-            elif 'import' in line:
-                self.fd.write(line)
-
         for line in self.readPythonScript[:linePos]:
             if '# MODULE:       ' in line:
                 scriptIdentifier = line.split('       ')[1][:-1]
             elif '#% description: ' in line:
                 scriptAbstract = line.split('description: ')[1][:-1]
 
-        self.fd.write(r"""from pywps import Process, LiteralInput, ComplexInput, ComplexOutput, Format
-from grass.pygrass.modules import Module
-from pywps.app.Service import Service
-from pywps.inout.formats import FORMATS
-
-supFormats = [Format(form.mime_type) for form in FORMATS]
-
-class Model(Process):
-    def __init__(self):
-        inputs = list()
-        outputs = list()
-""" )
         for line in self.readPythonScript[18:]:
             linePos = linePos + 1
             if '#% key:' in line:

@@ -2670,11 +2670,11 @@ if __name__ == "__main__":
                 format_spec = "data_type='{}'".format(param['type'])
 
             self.fd.write(
-"""        {in_out}.append({input_output}(identifier='{param_name}',
+"""        {ins_or_outs}.append({lit_or_complex}(identifier='{param_name}',
             title='{description}',
             {special_params}))
-""".format(in_out=io_data,
-           input_output=object_type,
+""".format(ins_or_outs=io_data,
+           lit_or_complex=object_type,
            param_name=self._getParamName(param['name'], item),
            description=desc,
            special_params=format_spec))

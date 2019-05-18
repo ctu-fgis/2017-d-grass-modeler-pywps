@@ -2115,7 +2115,7 @@ class PyWPSPanel(wx.Panel):
             mode = stat.S_IMODE(os.lstat(self.pyFilename)[stat.ST_MODE])
             os.chmod(self.pyFilename, mode | stat.S_IXUSR)
 
-        WritePyWPSFile(filename, fd.name)
+        WritePyWPSFile(filename, fd.name, self.parent.GetModel())
 
         # executable file
         os.chmod(filename, stat.S_IRWXU | stat.S_IWUSR)
@@ -2170,7 +2170,7 @@ class PyWPSPanel(wx.Panel):
 
         pywpsfd = grass.tempfile()
 
-        WritePyWPSFile(pywpsfd, pyfd.name)
+        WritePyWPSFile(pywpsfd, pyfd.name, self.parent.GetModel())
         fd2 = open(pywpsfd, 'rb')
         self.body.SetText(fd2.read())
         fd2.close()

@@ -2510,7 +2510,7 @@ class WriteModelFile:
 
 class WritePyWPSFile:
 
-    def __init__(self, filename, pythonScript):
+    def __init__(self, filename, pythonScript, model):
         """Class for exporting model to PyWPS script
 
         """
@@ -2519,6 +2519,7 @@ class WritePyWPSFile:
         pythonScript.close()
 
         self.fd = open(filename, 'w')
+        self.model = model
         self._writePyWPS()
 
     def _writePyWPS(self):
@@ -2677,6 +2678,7 @@ class WritePythonFile:
         """Write model to file"""
         properties = self.model.GetProperties()
 
+        # TODO: Change for the real version
         if 'landa' not in properties['author'] and 'martin' not in properties['author']:
             userName = properties['author']
         else:
@@ -2699,7 +2701,7 @@ class WritePythonFile:
 #{header_end}
 """.format(header_begin='#' * 77,
            module_name=EncodeString(properties['name']),
-           author=EncodeString(properties['author']),
+           author=EncodeString(userName),
            purpose=EncodeString(
                '\n# '.join(properties['description'].splitlines())),
            date=time.asctime(),

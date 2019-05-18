@@ -2550,6 +2550,10 @@ class Model(Process):
             elif '#% description: ' in line:
                 scriptAbstract = line.split('description: ')[1][:-1]
 
+        for item in self.model.GetItems():
+            self._write_input_outputs(item,
+                                      variables=item.GetParameterizedParams())
+
         for line in self.readPythonScript[18:]:
             linePos = linePos + 1
             if '#% key:' in line:
@@ -2643,6 +2647,43 @@ if __name__ == "__main__":
                         self.fd.write(')\n')
                 else:
                     self.fd.write(line[1:])
+
+    def _write_input_outputs(self, item, variables):
+        # TODO: flags
+        for param in item.GetParameterizedParams()['params']:
+            if param['label']:
+                desc = param['label']
+            else:
+                desc = param['description']
+
+            if 'output' in param['name']:
+                io_data = 'outputs'
+                object_type = 'ComplexOutput'
+                format_spec = 'supported_formats=supFormats'
+            elif 'input' in param['name']:
+                io_data = 'inputs'
+                object_type = 'ComplexInput'
+                format_spec = 'supported_formats=supFormats'
+            else:
+                io_data = 'inputs'
+                object_type = 'LiteralInput'
+                format_spec = "data_type='{}'".format(param['type'])
+
+            self.fd.write(
+"""        {in_out}.append({input_output}(identifier='{param_name}',
+            title='{description}',
+            {special_params}))
+""".format(in_out=io_data,
+           input_output=object_type,
+           param_name=self._getParamName(param['name'], item),
+           description=desc,
+           special_params=format_spec))
+
+    def _getParamName(self, parameter_name, item):
+        return '{module_name}{module_id}_{param_name}'.format(
+            module_name=re.sub('[^a-zA-Z]+', '', item.GetLabel()),
+            module_id=item.GetId(),
+            param_name=parameter_name)
 
 
 class WritePythonFile:

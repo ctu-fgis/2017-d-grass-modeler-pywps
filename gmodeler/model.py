@@ -47,7 +47,6 @@ from wx.lib import ogl
 
 from core import globalvar
 from core import utils
-from core.utils import _
 from core.gcmd import GMessage, GException, GError, RunCommand, EncodeString, GWarning, GetDefaultEncoding
 from core.settings import UserSettings
 from gui_core.forms import GUI, CmdPanel
@@ -2526,7 +2525,23 @@ class WritePyWPSFile:
         """Write PyWPS model to file"""
 
         linePos = 18
-        self.fd.write('#!/usr/bin/env python\n\n')
+        self.fd.write(r"""#!/usr/bin/env python
+
+import sys
+import os
+import atexit
+from grass.script import run_command
+from pywps import Process, LiteralInput, ComplexInput, ComplexOutput, Format
+from pywps.app.Service import Service
+from pywps.inout.formats import FORMATS
+
+supFormats = [Format(form.mime_type) for form in FORMATS]
+
+class Model(Process):
+    def __init__(self):
+        inputs = list()
+        outputs = list()
+""")
 
         for line in self.readPythonScript[linePos-1:]:
             if 'def main' in line:

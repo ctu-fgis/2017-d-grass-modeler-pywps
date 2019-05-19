@@ -2551,38 +2551,6 @@ class Model(Process):
             self._write_input_outputs(item,
                                       variables=item.GetParameterizedParams())
 
-        for line in self.readPythonScript[18:]:
-            linePos = linePos + 1
-            if '#% key:' in line:
-                if 'output' not in line:
-                    if 'input' in line:
-                        self.fd.write("""
-        inputs.append(ComplexInput(identifier='{}',
-            supported_formats=supFormats""".format(line[8:-1]))
-                    else:
-                        self.fd.write("""
-        inputs.append(LiteralInput(identifier='{}'""".format(line[8:-1]))
-                else:
-                    self.fd.write("""
-        outputs.append(ComplexOutput(identifier='{}',
-            supported_formats=supFormats""".format(line[8:-1]))
-                lastItem = line[8:-1]
-            # TODO: (diversify literal/complex, other outputs than "output")
-            elif '#% description:' in line:
-                self.fd.write(',\n            title="%s"' % line[16:-1])
-            elif '#% type:' in line:
-                if 'input' not in lastItem and 'output' not in lastItem:
-                    if line[9:-1] != 'double':
-                        self.fd.write(
-                            ',\n            data_type="{}"))'.format(
-                                line[9:-1]))
-                    else:
-                        self.fd.write(',\n            data_type="float"))')
-                else:
-                    self.fd.write('))')
-            elif 'def main' in line:
-                break
-
         # TODO: Specify grass_location
         self.fd.write(r"""
         super(Model, self).__init__(
@@ -2614,7 +2582,20 @@ if __name__ == "__main__":
         self.fd.close()
 
     def _write_input_outputs(self, item, variables):
-        # TODO: flags
+        for flag in item.GetParameterizedParams()['flags']:
+            if flag['label']:
+                desc = flag['label']
+            else:
+                desc = flag['description']
+
+            io_data = 'inputs'
+            object_type = 'LiteralInput'
+            format_spec = "data_type='string'"
+
+            self._write_input_output_object(
+                io_data, object_type, flag['name'], item, desc, format_spec)
+
+
         for param in item.GetParameterizedParams()['params']:
             if param['label']:
                 desc = param['label']
@@ -2634,13 +2615,18 @@ if __name__ == "__main__":
                 object_type = 'LiteralInput'
                 format_spec = "data_type='{}'".format(param['type'])
 
-            self.fd.write(
+            self._write_input_output_object(
+                io_data, object_type, param['name'], item, desc, format_spec)
+
+    def _write_input_output_object(
+            self, io_data, object_type, name, item, desc, format_spec):
+        self.fd.write(
 """        {ins_or_outs}.append({lit_or_complex}(identifier='{param_name}',
             title='{description}',
             {special_params}))
 """.format(ins_or_outs=io_data,
            lit_or_complex=object_type,
-           param_name=self._getParamName(param['name'], item),
+           param_name=self._getParamName(name, item),
            description=desc,
            special_params=format_spec))
 

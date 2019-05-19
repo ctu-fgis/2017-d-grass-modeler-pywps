@@ -2524,8 +2524,9 @@ class WritePyWPSFile:
 
     def _writePyWPS(self):
         """Write PyWPS model to file"""
-
         linePos = 18
+        properties = self.model.GetProperties()
+
         self.fd.write(r"""#!/usr/bin/env python
 
 import sys
@@ -2539,16 +2540,12 @@ from pywps.inout.formats import FORMATS
 supFormats = [Format(form.mime_type) for form in FORMATS]
 
 class Model(Process):
+
     def __init__(self):
         inputs = list()
         outputs = list()
-""")
 
-        for line in self.readPythonScript[:linePos]:
-            if '# MODULE:       ' in line:
-                scriptIdentifier = line.split('       ')[1][:-1]
-            elif '#% description: ' in line:
-                scriptAbstract = line.split('description: ')[1][:-1]
+""")
 
         for item in self.model.GetItems():
             self._write_input_outputs(item,
@@ -2585,6 +2582,7 @@ class Model(Process):
             elif 'def main' in line:
                 break
 
+        # TODO: Specify grass_location
         self.fd.write(r"""
         super(Model, self).__init__(
             self._handler,
@@ -2596,8 +2594,8 @@ class Model(Process):
             version='1.0',
             store_supported=True,
             status_supported=True)
-""".format(identifier=scriptIdentifier, title=scriptIdentifier,
-           abstract=scriptAbstract))
+""".format(identifier=properties['name'], title=properties['name'],
+           abstract="''".join(properties['description'].splitlines())))
 
         self.fd.write("""
     @staticmethod

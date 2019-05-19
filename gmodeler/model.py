@@ -2572,6 +2572,19 @@ class Model(Process):
 
         self._writeHandler()
 
+        for item in self.model.GetItems():
+            if item.GetParameterizedParams()['flags']:
+                self.fd.write(r"""
+def getParameterizedFlags(paramFlags, itemFlags):
+    fl = ''
+    for i in [key for key, value in paramFlags.iteritems() if value[0].data == 'True']:
+        if i in itemFlags:
+            fl += i[-1]
+
+    return fl
+""")
+                break
+
         self.fd.write("""
 if __name__ == "__main__":
     process = Model()
@@ -2582,6 +2595,7 @@ if __name__ == "__main__":
         self.fd.close()
 
     def _write_input_outputs(self, item, variables):
+        # TODO: Default values
         for flag in item.GetParameterizedParams()['flags']:
             if flag['label']:
                 desc = flag['label']
@@ -2767,10 +2781,10 @@ if __name__ == "__main__":
             ret += ",\n{indent}flags='{fl}'".format(indent=' ' * cmdIndent,
                                                     fl=flags)
             if itemParameterizedFlags:
-                ret += ' + getParameterizedFlags(options, [{}])'.format(
+                ret += ' + getParameterizedFlags(request.inputs, [{}])'.format(
                     itemParameterizedFlags)
         elif itemParameterizedFlags:
-            ret += ',\n{}flags=getParameterizedFlags(options, [{}])'.format(
+            ret += ',\n{}flags=getParameterizedFlags(request.inputs, [{}])'.format(
                 ' ' * cmdIndent,
                 itemParameterizedFlags)
 
@@ -2965,9 +2979,7 @@ def cleanup():
                 self.fd.write(r"""
 def getParameterizedFlags(paramFlags, itemFlags):
     fl = ''
-""")
-
-                self.fd.write("""    for i in [key for key, value in paramFlags.iteritems() if value == 'True']:
+    for i in [key for key, value in paramFlags.iteritems() if value == 'True']:
         if i in itemFlags:
             fl += i[-1]
 

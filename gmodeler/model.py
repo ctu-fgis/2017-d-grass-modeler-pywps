@@ -2573,8 +2573,9 @@ class Model(Process):
             elif '#% type:' in line:
                 if 'input' not in lastItem and 'output' not in lastItem:
                     if line[9:-1] != 'double':
-                        self.fd.write(',\n            '
-                                      'data_type="{}"))'.format(line[9:-1]))
+                        self.fd.write(
+                            ',\n            data_type="{}"))'.format(
+                                line[9:-1]))
                     else:
                         self.fd.write(',\n            data_type="float"))')
                 else:
@@ -2599,9 +2600,9 @@ class Model(Process):
 
         self.fd.write("""
     @staticmethod
-    def _handler(request, response):
-""")
-        self._insertPythonScript(linePos)
+    def _handler(request, response):""")
+
+        self._writeHandler()
 
         self.fd.write("""
 if __name__ == "__main__":
@@ -2611,39 +2612,6 @@ if __name__ == "__main__":
     application = Service(processes)""")
 
         self.fd.close()
-
-    def _insertPythonScript(self, linePos):
-
-        lastOutput = '"output1"'
-        for line in self.readPythonScript[linePos:]:
-            if line[0] != '#':
-                if line[4:10] == 'return':
-                    self.fd.write('\n        response.outputs'
-                                  '[{}].file = {}\n'.format(lastOutput,
-                                                            lastOutput))
-                    self.fd.write('\n        return response\n')
-                    break
-                elif line[0:15] == '    run_command':
-                    self.fd.write("""        Module{}""".format(line[15:]))
-                elif '=options[' in line:
-                    inLine = line.split('=options')
-                    if 'output' not in inLine[1]:
-                        if 'input' in inLine[1]:
-                            inLine = '{}=request.inputs{}[0].file'.format(
-                                inLine[0], (inLine[1])[:-2])
-                        else:
-                            inLine = '{}=request.inputs{}[0].data'.format(
-                                inLine[0], (inLine[1])[:-2])
-                    else:
-                        lastOutput = inLine[1][1:-3]
-                        inLine = '%s=%s' % (inLine[0], lastOutput)
-                    self.fd.write(inLine[1:])
-                    if line[-2] == ',':
-                        self.fd.write(',\n')
-                    else:
-                        self.fd.write(')\n')
-                else:
-                    self.fd.write(line[1:])
 
     def _write_input_outputs(self, item, variables):
         # TODO: flags
@@ -2675,6 +2643,170 @@ if __name__ == "__main__":
            param_name=self._getParamName(param['name'], item),
            description=desc,
            special_params=format_spec))
+
+    def _writeHandler(self):
+        self.indent = 8
+        for item in self.model.GetItems():
+            self._writePythonItem(item,
+                                  variables=item.GetParameterizedParams())
+
+        self.fd.write('\n{}return response\n\n'.format(' ' * self.indent))
+
+    def _writePythonItem(self, item, ignoreBlock=True, variables={}):
+        """Write model object to Python file"""
+        if isinstance(item, ModelAction):
+            if ignoreBlock and item.GetBlockId():
+                # ignore items in loops of conditions
+                return
+            self._writePythonAction(item, variables=variables)
+        elif isinstance(item, ModelLoop) or isinstance(item, ModelCondition):
+            # substitute condition
+            cond = item.GetLabel()
+            for variable in self.model.GetVariables():
+                pattern = re.compile('%' + variable)
+                if pattern.search(cond):
+                    value = variables[variable].get('value', '')
+                    if variables[variable].get('type', 'string') == 'string':
+                        value = '"' + value + '"'
+                    cond = pattern.sub(value, cond)
+            if isinstance(item, ModelLoop):
+                condVar, condText = map(
+                    lambda x: x.strip(),
+                    re.split('\s* in \s*', cond))
+                cond = "%sfor %s in " % (' ' * self.indent, condVar)
+                if condText[0] == '`' and condText[-1] == '`':
+                    task = GUI(
+                        show=None).ParseCommand(
+                        cmd=utils.split(
+                            condText[
+                                1:-
+                                1]))
+                    cond += "grass.read_command("
+                    cond += self._getPythonActionCmd(
+                        task, len(cond), variables=[condVar]) + ".splitlines()"
+                else:
+                    cond += condText
+                self.fd.write('%s:\n' % cond)
+                self.indent += 4
+                variablesLoop = variables.copy()
+                variablesLoop[condVar] = None
+                for action in item.GetItems(
+                        self.model.GetItems(objType=ModelAction)):
+                    self._writePythonItem(
+                        action, ignoreBlock=False, variables=variablesLoop)
+                self.indent -= 4
+            if isinstance(item, ModelCondition):
+                self.fd.write('%sif %s:\n' % (' ' * self.indent, cond))
+                self.indent += 4
+                condItems = item.GetItems()
+                for action in condItems['if']:
+                    self._writePythonItem(action, ignoreBlock=False)
+                if condItems['else']:
+                    self.indent -= 4
+                    self.fd.write('%selse:\n' % (' ' * self.indent))
+                    self.indent += 4
+                    for action in condItems['else']:
+                        self._writePythonItem(action, ignoreBlock=False)
+                self.indent += 4
+        self.fd.write('\n')
+        if isinstance(item, ModelComment):
+            self._writePythonComment(item)
+
+    def _writePythonAction(self, item, variables={}):
+        """Write model action to Python file"""
+        task = GUI(show=None).ParseCommand(cmd=item.GetLog(string=False))
+        strcmd = "\n%srun_command(" % (' ' * self.indent)
+        self.fd.write(
+            strcmd +
+            self._getPythonActionCmd(
+                item,
+                task,
+                len(strcmd) - 1,
+                variables))
+
+    def _getPythonActionCmd(self, item, task, cmdIndent, variables={}):
+        opts = task.get_options()
+
+        ret = ''
+        flags = ''
+        params = list()
+        itemParameterizedFlags = list()
+        parameterizedParams = [v['name'] for v in variables['params']]
+        parameterizedFlags = [v['name'] for v in variables['flags']]
+
+        for f in opts['flags']:
+            if f.get('name') in parameterizedFlags and len(f.get('name')) == 1:
+                itemParameterizedFlags.append(
+                    '"{}"'.format(self._getParamName(f.get('name'), item)))
+            if f.get('value', False):
+                name = f.get('name', '')
+                if len(name) > 1:
+                    params.append('%s=True' % name)
+                else:
+                    flags += name
+
+        itemParameterizedFlags = ', '.join(itemParameterizedFlags)
+
+        out = None
+
+        for p in opts['params']:
+            name = p.get('name', None)
+            value = p.get('value', None)
+
+            if (name and value) or (name in parameterizedParams):
+                ptype = p.get('type', 'string')
+                foundVar = False
+
+                if name in parameterizedParams:
+                    foundVar = True
+                    if 'input' in name:
+                        value = "request.inputs['{}'][0].file".format(
+                            self._getParamName(name, item))
+                    elif 'output' in name:
+                        param_name = self._getParamName(name, item)
+                        value = "response.outputs['{}'].data".format(
+                            param_name)
+                        out = param_name
+                    else:
+                        value = "request.inputs['{}'][0].data".format(
+                            self._getParamName(name, item))
+
+                if foundVar or ptype != 'string':
+                    params.append("{}={}".format(name, value))
+                else:
+                    params.append('{}="{}"'.format(name, value))
+
+        ret += '"%s"' % task.get_name()
+        if flags:
+            ret += ",\n{indent}flags='{fl}'".format(indent=' ' * cmdIndent,
+                                                    fl=flags)
+            if itemParameterizedFlags:
+                ret += ' + getParameterizedFlags(options, [{}])'.format(
+                    itemParameterizedFlags)
+        elif itemParameterizedFlags:
+            ret += ',\n{}flags=getParameterizedFlags(options, [{}])'.format(
+                ' ' * cmdIndent,
+                itemParameterizedFlags)
+
+        if len(params) > 0:
+            ret += ",\n"
+            for opt in params[:-1]:
+                ret += "%s%s,\n" % (' ' * cmdIndent, opt)
+            ret += "%s%s)" % (' ' * cmdIndent, params[-1])
+        else:
+            ret += ")\n"
+
+        # TODO: Write the nex line only for those not-tagged as intermediate
+        if out:
+            ret += '\n\n{}response.outputs["{}"].file = "{}"'.format(
+                ' ' * self.indent, out, out)
+
+        return ret
+
+    def _writePythonComment(self, item):
+        """Write model comment to Python file"""
+        for line in item.GetLabel().splitlines():
+            self.fd.write('#' + line + '\n')
 
     def _getParamName(self, parameter_name, item):
         return '{module_name}{module_id}_{param_name}'.format(

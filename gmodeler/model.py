@@ -2586,21 +2586,20 @@ class Model(Process):
                 break
 
         self.fd.write(r"""
-
         super(Model, self).__init__(
             self._handler,
-            identifier='%s',
-            title='%s',
+            identifier='{identifier}',
+            title='{title}',
             inputs=inputs,
             outputs=outputs,
-            abstract='%s',
+            abstract='{abstract}',
             version='1.0',
             store_supported=True,
-            status_supported=True)""" % (scriptIdentifier, scriptIdentifier,
-                                         scriptAbstract))
+            status_supported=True)
+""".format(identifier=scriptIdentifier, title=scriptIdentifier,
+           abstract=scriptAbstract))
 
         self.fd.write("""
-
     @staticmethod
     def _handler(request, response):
 """)

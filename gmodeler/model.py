@@ -2514,6 +2514,7 @@ class WritePyWPSFile:
         """Class for exporting model to PyWPS script
 
         """
+        self.indent = 8
         pythonScript = open(pythonScript, 'rb')
         self.readPythonScript = pythonScript.readlines()
         pythonScript.close()
@@ -2602,12 +2603,18 @@ if __name__ == "__main__":
             else:
                 desc = flag['description']
 
+            if flag['value']:
+                value = "\n{}default='{}'".format(' ' * (self.indent + 4),
+                                                  flag['value'])
+            else:
+                value = "\n{}default='False'".format(' ' * (self.indent + 4))
+
             io_data = 'inputs'
             object_type = 'LiteralInput'
             format_spec = "data_type='string'"
 
             self._write_input_output_object(
-                io_data, object_type, flag['name'], item, desc, format_spec)
+                io_data, object_type, flag['name'], item, desc, format_spec, value)
 
 
         for param in item.GetParameterizedParams()['params']:
@@ -2615,6 +2622,13 @@ if __name__ == "__main__":
                 desc = param['label']
             else:
                 desc = param['description']
+
+            # TODO: Differentiate numbers
+            if param['value']:
+                value = "\n{}default='{}'".format(' ' * (self.indent + 4),
+                                                  param['value'])
+            else:
+                value = ''
 
             if 'output' in param['name']:
                 io_data = 'outputs'
@@ -2630,22 +2644,23 @@ if __name__ == "__main__":
                 format_spec = "data_type='{}'".format(param['type'])
 
             self._write_input_output_object(
-                io_data, object_type, param['name'], item, desc, format_spec)
+                io_data, object_type, param['name'], item, desc, format_spec,
+                value)
 
     def _write_input_output_object(
-            self, io_data, object_type, name, item, desc, format_spec):
+            self, io_data, object_type, name, item, desc, format_spec, value):
         self.fd.write(
 """        {ins_or_outs}.append({lit_or_complex}(identifier='{param_name}',
             title='{description}',
-            {special_params}))
+            {special_params}{value}))
 """.format(ins_or_outs=io_data,
            lit_or_complex=object_type,
            param_name=self._getParamName(name, item),
            description=desc,
-           special_params=format_spec))
+           special_params=format_spec,
+           value=value))
 
     def _writeHandler(self):
-        self.indent = 8
         for item in self.model.GetItems():
             self._writePythonItem(item,
                                   variables=item.GetParameterizedParams())

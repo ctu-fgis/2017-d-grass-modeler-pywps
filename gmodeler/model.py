@@ -2623,10 +2623,14 @@ if __name__ == "__main__":
             else:
                 desc = param['description']
 
-            # TODO: Differentiate numbers
             if param['value']:
-                value = "\n{}default='{}'".format(' ' * (self.indent + 4),
-                                                  param['value'])
+                if param['type'] in ['float', 'integer']:
+                    value = param['value']
+                else:
+                    value = "'{}'".format(param['value'])
+
+                value = "\n{}default={}".format(' ' * (self.indent + 4),
+                                                value)
             else:
                 value = ''
 

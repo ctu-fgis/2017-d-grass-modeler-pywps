@@ -1992,9 +1992,6 @@ class PyWPSPanel(wx.Panel):
                                     label=" %s " % _("PyWPS script"))
         self.body = PyStc(parent=self, statusbar=self.parent.GetStatusBar())
 
-        self.btnRun = wx.Button(parent=self, id=wx.ID_ANY, label=_("&Run"))
-        self.btnRun.SetToolTipString(_("Run PyWPS script"))
-        self.Bind(wx.EVT_BUTTON, self.OnRun, self.btnRun)
         self.btnSaveAs = wx.Button(parent=self, id=wx.ID_SAVEAS)
         self.btnSaveAs.SetToolTipString(_("Save PyWPS script to file"))
         self.Bind(wx.EVT_BUTTON, self.OnSaveAs, self.btnSaveAs)
@@ -2019,8 +2016,6 @@ class PyWPSPanel(wx.Panel):
         btnSizer.AddStretchSpacer()
         btnSizer.Add(self.btnSaveAs, proportion=0,
                      flag=wx.RIGHT | wx.ALIGN_RIGHT, border=5)
-        btnSizer.Add(self.btnRun, proportion=0,
-                     flag=wx.RIGHT | wx.ALIGN_RIGHT, border=5)
 
         sizer.Add(bodySizer, proportion=1,
                   flag=wx.EXPAND | wx.ALL, border=3)
@@ -2030,31 +2025,6 @@ class PyWPSPanel(wx.Panel):
         sizer.Fit(self)
         sizer.SetSizeHints(self)
         self.SetSizer(sizer)
-
-    def OnRun(self, event):
-        """Export PyWPS script"""
-
-        if not self.pyFilename:
-            self.pyFilename = grass.tempfile() # python script
-
-        try:
-            fd = open(self.pyFilename, "w")
-            fd.write(self.parent.pyWPSPanel.body.GetText())
-
-        except IOError as e:
-            GError(_("Unable to launch Python script. %s") % e,
-                   parent=self)
-            return
-        finally:
-            fd.close()
-            mode = stat.S_IMODE(os.lstat(self.pyFilename)[stat.ST_MODE])
-            os.chmod(self.pyFilename, mode | stat.S_IXUSR)
-
-        self.parent._gconsole.RunCmd(
-            [fd.name],
-            skipInterface=True, onDone=self.OnDone)
-
-        event.Skip()
 
     def OnDone(self, event):
         """PyWPS script finished"""

@@ -1986,8 +1986,6 @@ class PyWPSPanel(wx.Panel):
 
         wx.Panel.__init__(self, parent=parent, id=id, **kwargs)
 
-        self.pyFilename = None  # temp file with python script
-
         self.bodyBox = wx.StaticBox(parent=self, id=wx.ID_ANY,
                                     label=" %s " % _("PyWPS script"))
         self.body = PyStc(parent=self, statusbar=self.parent.GetStatusBar())
@@ -2025,11 +2023,6 @@ class PyWPSPanel(wx.Panel):
         sizer.Fit(self)
         sizer.SetSizeHints(self)
         self.SetSizer(sizer)
-
-    def OnDone(self, event):
-        """PyWPS script finished"""
-        try_remove(self.pyFilename)
-        self.pyFilename = None
 
     def SaveAs(self, force=False):
         """Save python script to file

@@ -2540,6 +2540,7 @@ from pywps.inout.formats import FORMATS
 
 supFormats = [Format(form.mime_type) for form in FORMATS]
 
+
 class Model(Process):
 
     def __init__(self):
@@ -2587,11 +2588,13 @@ def getParameterizedFlags(paramFlags, itemFlags):
                 break
 
         self.fd.write("""
+
 if __name__ == "__main__":
     process = Model()
 
     processes = [Model()]
-    application = Service(processes)""")
+    application = Service(processes)
+""")
 
         self.fd.close()
 

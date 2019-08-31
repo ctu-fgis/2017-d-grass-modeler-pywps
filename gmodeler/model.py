@@ -2614,7 +2614,7 @@ if __name__ == "__main__":
 
             io_data = 'inputs'
             object_type = 'LiteralInput'
-            format_spec = "data_type='string'"
+            format_spec = "data_type='string',"
 
             self._write_input_output_object(
                 io_data, object_type, flag['name'], item, desc, format_spec, value)
@@ -2632,7 +2632,7 @@ if __name__ == "__main__":
                 else:
                     value = "'{}'".format(param['value'])
 
-                value = "\n{}default={}".format(' ' * (self.indent + 4),
+                value = ",\n{}default={}".format(' ' * (self.indent + 4),
                                                 value)
             else:
                 value = ''

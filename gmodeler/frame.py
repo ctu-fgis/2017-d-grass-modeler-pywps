@@ -1982,7 +1982,7 @@ class PyWPSPanel(wx.Panel):
 
     def __init__(self, parent, id=wx.ID_ANY,
                  **kwargs):
-        """Model as pyWPS script
+        """Model as pyWPS script.
         """
         self.parent = parent
 
@@ -1997,8 +1997,8 @@ class PyWPSPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.OnSaveAs, self.btnSaveAs)
         self.btnRefresh = wx.Button(parent=self, id=wx.ID_REFRESH)
         self.btnRefresh.SetToolTipString(_(
-            "Refresh PyWPS script based on the python script.\n"
-            "It will discards all local changes."))
+            "Refresh PyWPS script.\n"
+            "It will discard all local changes."))
         self.Bind(wx.EVT_BUTTON, self.OnRefresh, self.btnRefresh)
 
         self._layout()
@@ -2027,7 +2027,7 @@ class PyWPSPanel(wx.Panel):
         self.SetSizer(sizer)
 
     def SaveAs(self, force=False):
-        """Save python script to file
+        """Save PyWPS script to file.
 
         :return: filename
         """
@@ -2088,7 +2088,7 @@ class PyWPSPanel(wx.Panel):
         return filename
 
     def OnSaveAs(self, event):
-        """Save python script to file"""
+        """Save PyWPS script to file."""
         self.SaveAs(force=False)
         event.Skip()
 
@@ -2107,7 +2107,7 @@ class PyWPSPanel(wx.Panel):
             dlg = wx.MessageDialog(
                 self,
                 message=_(
-                    "Python script is locally modificated. "
+                    "PyWPS script is locally modified. "
                     "Refresh will discard all changes. "
                     "Do you really want to continue?"),
                 caption=_("Update"),
@@ -2145,17 +2145,17 @@ class PyWPSPanel(wx.Panel):
         return True
 
     def OnRefresh(self, event):
-        """Refresh Python script"""
+        """Refresh PyWPS script."""
         if self.RefreshScript():
-            self.parent.SetStatusText(_('Python script is up-to-date'), 0)
+            self.parent.SetStatusText(_('PyWPS script is up-to-date'), 0)
         event.Skip()
 
     def IsModified(self):
-        """Check if python script has been modified"""
+        """Check if PyWPS script has been modified."""
         return self.body.modified
 
     def IsEmpty(self):
-        """Check if python script is empty"""
+        """Check if python script is empty."""
         return len(self.body.GetText()) == 0
 
 

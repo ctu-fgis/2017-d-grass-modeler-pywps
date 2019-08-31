@@ -2528,7 +2528,7 @@ class WritePyWPSFile:
         linePos = 18
         properties = self.model.GetProperties()
 
-        self.fd.write(r"""#!/usr/bin/env python
+        self.fd.write(r"""#!/usr/bin/env python3
 
 import sys
 import os
@@ -2579,7 +2579,7 @@ class Model(Process):
                 self.fd.write(r"""
 def getParameterizedFlags(paramFlags, itemFlags):
     fl = ''
-    for i in [key for key, value in paramFlags.iteritems() if value[0].data == 'True']:
+    for i in [key for key, value in paramFlags.items() if value[0].data == 'True']:
         if i in itemFlags:
             fl += i[-1]
 
@@ -2654,8 +2654,8 @@ if __name__ == "__main__":
                 io_data, object_type, param['name'], item, desc, format_spec,
                 value)
 
-    def _write_input_output_object(
-            self, io_data, object_type, name, item, desc, format_spec, value):
+    def _write_input_output_object(self, io_data, object_type, name, item,
+                                   desc, format_spec, value):
         self.fd.write(
 """        {ins_or_outs}.append({lit_or_complex}(identifier='{param_name}',
             title='{description}',
@@ -3001,7 +3001,7 @@ def cleanup():
                 self.fd.write(r"""
 def getParameterizedFlags(paramFlags, itemFlags):
     fl = ''
-    for i in [key for key, value in paramFlags.iteritems() if value == 'True']:
+    for i in [key for key, value in paramFlags.items() if value == 'True']:
         if i in itemFlags:
             fl += i[-1]
 

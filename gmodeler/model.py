@@ -2878,7 +2878,7 @@ class WritePythonFile:
 
         # header
         self.fd.write(
-            r"""#!/usr/bin/env python
+            r"""#!/usr/bin/env python3
 #
 #{header_begin}
 #

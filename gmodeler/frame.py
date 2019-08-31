@@ -1990,15 +1990,15 @@ class PyWPSPanel(wx.Panel):
 
         self.pyFilename = None  # temp file with python script
 
-        self.bodyBox = wx.StaticBox(parent=self, id=wx.ID_ANY,
+        self.bodyBox = StaticBox(parent=self, id=wx.ID_ANY,
                                     label=" %s " % _("PyWPS script"))
         self.body = PyStc(parent=self, statusbar=self.parent.GetStatusBar())
 
-        self.btnSaveAs = wx.Button(parent=self, id=wx.ID_SAVEAS)
-        self.btnSaveAs.SetToolTipString(_("Save PyWPS script to file"))
+        self.btnSaveAs = Button(parent=self, id=wx.ID_SAVEAS)
+        self.btnSaveAs.SetToolTip(_("Save PyWPS script to file"))
         self.Bind(wx.EVT_BUTTON, self.OnSaveAs, self.btnSaveAs)
         self.btnRefresh = wx.Button(parent=self, id=wx.ID_REFRESH)
-        self.btnRefresh.SetToolTipString(_(
+        self.btnRefresh.SetToolTip(_(
             "Refresh PyWPS script.\n"
             "It will discard all local changes."))
         self.Bind(wx.EVT_BUTTON, self.OnRefresh, self.btnRefresh)

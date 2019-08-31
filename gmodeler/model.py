@@ -2626,7 +2626,7 @@ if __name__ == "__main__":
             else:
                 desc = param['description']
 
-            if param['value']:
+            if param['value'] and 'output' not in param['name']:
                 if param['type'] in ['float', 'integer']:
                     value = param['value']
                 else:

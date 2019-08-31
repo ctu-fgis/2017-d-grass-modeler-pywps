@@ -1988,6 +1988,8 @@ class PyWPSPanel(wx.Panel):
 
         wx.Panel.__init__(self, parent=parent, id=id, **kwargs)
 
+        self.pyFilename = None  # temp file with python script
+
         self.bodyBox = wx.StaticBox(parent=self, id=wx.ID_ANY,
                                     label=" %s " % _("PyWPS script"))
         self.body = PyStc(parent=self, statusbar=self.parent.GetStatusBar())

@@ -1,15 +1,17 @@
 # 2017-d-grass-modeler-pywps
 
+## Description
+
 Semester project of 155YFSG class (academic year 2016/2017) at CTU Prague
 Department of Geomatics
 
 * Group D
 
-### Author
+## Author
 
 * Pešek Ondřej
 
-### Task
+## Task
 
 GRASS modeler allows interactively creating, editing and managing models. It
 also allows user to define items and actions and to parameterize GRASS

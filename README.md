@@ -19,8 +19,8 @@ commands. User can export his model to Python script.
 
 This project consists of two parts:
 
- * Support parameterization and generate also UI into a Python script (see
+* Support parameterization and generate also UI into a Python script (see
   frozen branch
   [ui_support](https://github.com/ctu-yfsg/2017-d-grass-modeler-pywps/tree/ui_support))
- * Allow user also to export his model directly to PyWPS (a Python
+* Allow user also to export his model directly to PyWPS (a Python
   implementation of the Web Processing Service) script (master branch)

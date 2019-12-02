@@ -40,7 +40,7 @@ from gui_core.gselect import Select, ElementSelect
 from gmodeler.model import *
 from lmgr.menudata import LayerManagerMenuData
 from gui_core.wrap import Button, StaticText, StaticBox, TextCtrl, \
-    Menu
+    Menu, ListCtrl, NewId
 
 from grass.script import task as gtask
 
@@ -577,7 +577,7 @@ class ModelLoopDialog(ModelItemDialog):
 
         cond = dialog.GetDSeries()
         if not cond:
-            cond = 'map in %s' % map(lambda x: str(x), dialog.GetMapLayers())
+            cond = 'map in {}'.format(list(map(str, dialog.GetMapLayers())))
 
         self.condText.SetValue(cond)
 
@@ -671,7 +671,7 @@ class ModelConditionDialog(ModelItemDialog):
                 'else': self.itemListElse.GetItems()}
 
 
-class ModelListCtrl(wx.ListCtrl,
+class ModelListCtrl(ListCtrl,
                     listmix.ListCtrlAutoWidthMixin,
                     listmix.TextEditMixin):
 
@@ -686,7 +686,7 @@ class ModelListCtrl(wx.ListCtrl,
         self.frame = frame
         self.columnNotEditable = columnsNotEditable
 
-        wx.ListCtrl.__init__(self, parent, id=id, style=style, **kwargs)
+        ListCtrl.__init__(self, parent, id=id, style=style, **kwargs)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
         listmix.TextEditMixin.__init__(self)
 
@@ -707,10 +707,12 @@ class ModelListCtrl(wx.ListCtrl,
 
     def OnBeginEdit(self, event):
         """Editing of item started"""
-        if self.columnNotEditable and event.m_col in self.columnNotEditable:
+        column = event.GetColumn()
+
+        if self.columnNotEditable and column in self.columnNotEditable:
             event.Veto()
             self.SetItemState(
-                event.m_itemIndex,
+                event.GetIndex(),
                 wx.LIST_STATE_SELECTED,
                 wx.LIST_STATE_SELECTED | wx.LIST_STATE_FOCUSED)
         else:
@@ -755,11 +757,11 @@ class VariableListCtrl(ModelListCtrl):
         self.DeleteAllItems()
         i = 0
         for name, vtype, value, desc in six.itervalues(self.itemDataMap):
-            index = self.InsertStringItem(i, name)
-            self.SetStringItem(index, 0, name)
-            self.SetStringItem(index, 1, vtype)
-            self.SetStringItem(index, 2, value)
-            self.SetStringItem(index, 3, desc)
+            index = self.InsertItem(i, name)
+            self.SetItem(index, 0, name)
+            self.SetItem(index, 1, vtype)
+            self.SetItem(index, 2, value)
+            self.SetItem(index, 3, desc)
             self.SetItemData(index, i)
             i += 1
 
@@ -774,11 +776,11 @@ class VariableListCtrl(ModelListCtrl):
                 return _("Variable <%s> already exists in the model. "
                          "Adding variable failed.") % name
 
-        index = self.InsertStringItem(self.GetItemCount(), name)
-        self.SetStringItem(index, 0, name)
-        self.SetStringItem(index, 1, vtype)
-        self.SetStringItem(index, 2, value)
-        self.SetStringItem(index, 3, desc)
+        index = self.InsertItem(self.GetItemCount(), name)
+        self.SetItem(index, 0, name)
+        self.SetItem(index, 1, vtype)
+        self.SetItem(index, 2, value)
+        self.SetItem(index, 3, desc)
         self.SetItemData(index, self.itemCount)
 
         self.itemDataMap[self.itemCount] = [name, vtype, value, desc]
@@ -834,9 +836,9 @@ class VariableListCtrl(ModelListCtrl):
     def OnRightUp(self, event):
         """Mouse right button up"""
         if not hasattr(self, "popupID1"):
-            self.popupID1 = wx.NewId()
-            self.popupID2 = wx.NewId()
-            self.popupID3 = wx.NewId()
+            self.popupID1 = NewId()
+            self.popupID2 = NewId()
+            self.popupID3 = NewId()
             self.Bind(wx.EVT_MENU, self.OnRemove, id=self.popupID1)
             self.Bind(wx.EVT_MENU, self.OnRemoveAll, id=self.popupID2)
             self.Bind(wx.EVT_MENU, self.OnReload, id=self.popupID3)
@@ -940,20 +942,20 @@ class ItemListCtrl(ModelListCtrl):
         i = 0
         if len(self.columns) == 2:
             for name, desc in six.itervalues(self.itemDataMap):
-                index = self.InsertStringItem(i, str(i))
-                self.SetStringItem(index, 0, name)
-                self.SetStringItem(index, 1, desc)
+                index = self.InsertItem(i, str(i))
+                self.SetItem(index, 0, name)
+                self.SetItem(index, 1, desc)
                 self.SetItemData(index, i)
                 if checked[i]:
                     self.CheckItem(index, True)
                 i += 1
         else:
             for name, inloop, param, desc in six.itervalues(self.itemDataMap):
-                index = self.InsertStringItem(i, str(i))
-                self.SetStringItem(index, 0, name)
-                self.SetStringItem(index, 1, inloop)
-                self.SetStringItem(index, 2, param)
-                self.SetStringItem(index, 3, desc)
+                index = self.InsertItem(i, str(i))
+                self.SetItem(index, 0, name)
+                self.SetItem(index, 1, inloop)
+                self.SetItem(index, 2, param)
+                self.SetItem(index, 3, desc)
                 self.SetItemData(index, i)
                 i += 1
 
@@ -1005,8 +1007,8 @@ class ItemListCtrl(ModelListCtrl):
 
         if not hasattr(self, "popupId"):
             self.popupID = dict()
-            self.popupID['remove'] = wx.NewId()
-            self.popupID['reload'] = wx.NewId()
+            self.popupID['remove'] = NewId()
+            self.popupID['reload'] = NewId()
             self.Bind(wx.EVT_MENU, self.OnRemove, id=self.popupID['remove'])
             self.Bind(wx.EVT_MENU, self.OnReload, id=self.popupID['reload'])
 

@@ -47,7 +47,7 @@ from wx.lib import ogl
 
 from core import globalvar
 from core import utils
-from core.gcmd import GMessage, GException, GError, RunCommand, EncodeString, GWarning, GetDefaultEncoding
+from core.gcmd import GMessage, GException, GError, RunCommand, GWarning, GetDefaultEncoding
 from core.settings import UserSettings
 from gui_core.forms import GUI, CmdPanel
 from gui_core.widgets import GNotebook
@@ -2250,22 +2250,19 @@ class WriteModelFile:
                 '%s<name>%s</name>\n' %
                 (' ' *
                  self.indent,
-                 EncodeString(
-                     self.properties['name'])))
+                 self.properties['name']))
         if self.properties['description']:
             self.fd.write(
                 '%s<description>%s</description>\n' %
                 (' ' *
                  self.indent,
-                 EncodeString(
-                     self.properties['description'])))
+                 self.properties['description']))
         if self.properties['author']:
             self.fd.write(
                 '%s<author>%s</author>\n' %
                 (' ' *
                  self.indent,
-                 EncodeString(
-                     self.properties['author'])))
+                 self.properties['author']))
 
         if 'overwrite' in self.properties and \
                 self.properties['overwrite']:
@@ -2284,15 +2281,15 @@ class WriteModelFile:
         for name, values in six.iteritems(self.variables):
             self.fd.write(
                 '%s<variable name="%s" type="%s">\n' %
-                (' ' * self.indent, EncodeString(name), values['type']))
+                (' ' * self.indent, name, values['type']))
             self.indent += 4
             if 'value' in values:
                 self.fd.write('%s<value>%s</value>\n' %
-                              (' ' * self.indent, EncodeString(values['value'])))
+                              (' ' * self.indent, values['value']))
             if 'description' in values:
                 self.fd.write(
                     '%s<description>%s</description>\n' %
-                    (' ' * self.indent, EncodeString(values['description'])))
+                    (' ' * self.indent, values['description']))
             self.indent -= 4
             self.fd.write('%s</variable>\n' % (' ' * self.indent))
         self.indent -= 4
@@ -2314,21 +2311,19 @@ class WriteModelFile:
         """Write actions"""
         self.fd.write(
             '%s<action id="%d" name="%s" pos="%d,%d" size="%d,%d">\n' %
-            (' ' *
-             self.indent,
+            (' ' * self.indent,
              action.GetId(),
-             EncodeString(
-                 action.GetLabel()),
-                action.GetX(),
-                action.GetY(),
-                action.GetWidth(),
-                action.GetHeight()))
+             action.GetLabel(),
+             action.GetX(),
+             action.GetY(),
+             action.GetWidth(),
+             action.GetHeight()))
         self.indent += 4
         comment = action.GetComment()
         if comment:
             self.fd.write(
                 '%s<comment>%s</comment>\n' %
-                (' ' * self.indent, EncodeString(comment)))
+                (' ' * self.indent, comment))
         self.fd.write('%s<task name="%s">\n' %
                       (' ' * self.indent, action.GetLog(string=False)[0]))
         self.indent += 4
@@ -2504,8 +2499,7 @@ class WriteModelFile:
              comment.GetY(),
              comment.GetWidth(),
              comment.GetHeight(),
-             EncodeString(
-                 comment.GetLabel())))
+             comment.GetLabel()))
 
 
 class WritePyWPSFile:
@@ -2892,10 +2886,9 @@ class WritePythonFile:
 #
 #{header_end}
 """.format(header_begin='#' * 77,
-           module_name=EncodeString(properties['name']),
-           author=EncodeString(userName),
-           purpose=EncodeString(
-               '\n# '.join(properties['description'].splitlines())),
+           module_name=properties['name'],
+           author=userName,
+           purpose='\n# '.join(properties['description'].splitlines()),
            date=time.asctime(),
            header_end='#' * 77))
 
@@ -2905,8 +2898,7 @@ class WritePythonFile:
 #%module
 #% description: {description}
 #%end
-""".format(description=EncodeString(
-                ' '.join(properties['description'].splitlines()))))
+""".format(description=' '.join(properties['description'].splitlines())))
 
         modelItems = self.model.GetItems()
         for item in modelItems:

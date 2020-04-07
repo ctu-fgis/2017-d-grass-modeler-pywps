@@ -63,8 +63,10 @@ from gui_core.pystc import PyStc
 from gmodeler.giface import GraphicalModelerGrassInterface
 from gmodeler.model import *
 from gmodeler.dialogs import *
-from gui_core.wrap import Button, StaticText, StaticBox, TextCtrl, \
-    Menu, StockCursor, EmptyBitmap, NewId
+from gui_core.wrap import (
+    Button, EmptyBitmap, ImageFromBitmap, Menu, NewId, StaticBox,
+    StaticText, StockCursor, TextCtrl,
+)
 from gui_core.wrap import TextEntryDialog as wxTextEntryDialog
 
 wxModelDone, EVT_MODEL_DONE = NewEvent()
@@ -716,7 +718,7 @@ class ModelFrame(wx.Frame):
                        int(ymaxImg - yminImg) + 50)
         bitmap = EmptyBitmap(width=size.width, height=size.height)
 
-        filetype, ltype = GetImageHandlers(wx.ImageFromBitmap(bitmap))
+        filetype, ltype = GetImageHandlers(ImageFromBitmap(bitmap))
 
         dlg = wx.FileDialog(
             parent=self,
@@ -1510,17 +1512,17 @@ class ModelEvtHandler(ogl.ShapeEvtHandler):
         self._onSelectShape(shape)
 
         popupMenu = Menu()
-        popupMenu.Append(self.popupID['remove'], text=_('Remove'))
+        popupMenu.Append(self.popupID['remove'], _('Remove'))
         self.frame.Bind(wx.EVT_MENU, self.OnRemove, id=self.popupID['remove'])
         if isinstance(shape, ModelAction) or isinstance(shape, ModelLoop):
             if shape.IsEnabled():
-                popupMenu.Append(self.popupID['enable'], text=_('Disable'))
+                popupMenu.Append(self.popupID['enable'], _('Disable'))
                 self.frame.Bind(
                     wx.EVT_MENU,
                     self.OnDisable,
                     id=self.popupID['enable'])
             else:
-                popupMenu.Append(self.popupID['enable'], text=_('Enable'))
+                popupMenu.Append(self.popupID['enable'], _('Enable'))
                 self.frame.Bind(
                     wx.EVT_MENU,
                     self.OnEnable,
@@ -1528,13 +1530,13 @@ class ModelEvtHandler(ogl.ShapeEvtHandler):
         if isinstance(shape, ModelAction) or isinstance(shape, ModelComment):
             popupMenu.AppendSeparator()
         if isinstance(shape, ModelAction):
-            popupMenu.Append(self.popupID['label'], text=_('Set label'))
+            popupMenu.Append(self.popupID['label'], _('Set label'))
             self.frame.Bind(
                 wx.EVT_MENU,
                 self.OnSetLabel,
                 id=self.popupID['label'])
         if isinstance(shape, ModelAction) or isinstance(shape, ModelComment):
-            popupMenu.Append(self.popupID['comment'], text=_('Set comment'))
+            popupMenu.Append(self.popupID['comment'], _('Set comment'))
             self.frame.Bind(
                 wx.EVT_MENU,
                 self.OnSetComment,
@@ -1544,14 +1546,14 @@ class ModelEvtHandler(ogl.ShapeEvtHandler):
             popupMenu.AppendSeparator()
             popupMenu.Append(
                 self.popupID['addPoint'],
-                text=_('Add control point'))
+                _('Add control point'))
             self.frame.Bind(
                 wx.EVT_MENU,
                 self.OnAddPoint,
                 id=self.popupID['addPoint'])
             popupMenu.Append(
                 self.popupID['delPoint'],
-                text=_('Remove control point'))
+                _('Remove control point'))
             self.frame.Bind(
                 wx.EVT_MENU,
                 self.OnRemovePoint,
@@ -1565,7 +1567,7 @@ class ModelEvtHandler(ogl.ShapeEvtHandler):
                len(self.GetShape().GetRelations('from')) > 0:
                 popupMenu.Append(
                     self.popupID['intermediate'],
-                    text=_('Intermediate'),
+                    _('Intermediate'),
                     kind=wx.ITEM_CHECK)
                 if self.GetShape().IsIntermediate():
                     popupMenu.Check(self.popupID['intermediate'], True)
@@ -1578,7 +1580,7 @@ class ModelEvtHandler(ogl.ShapeEvtHandler):
             if self.frame._giface.GetMapDisplay():
                 popupMenu.Append(
                     self.popupID['display'],
-                    text=_('Display'),
+                    _('Display'),
                     kind=wx.ITEM_CHECK)
                 if self.GetShape().HasDisplay():
                     popupMenu.Check(self.popupID['display'], True)
@@ -1595,7 +1597,7 @@ class ModelEvtHandler(ogl.ShapeEvtHandler):
                 isinstance(shape, ModelAction) or \
                 isinstance(shape, ModelLoop):
             popupMenu.AppendSeparator()
-            popupMenu.Append(self.popupID['props'], text=_('Properties'))
+            popupMenu.Append(self.popupID['props'], _('Properties'))
             self.frame.Bind(
                 wx.EVT_MENU,
                 self.OnProperties,

@@ -257,20 +257,25 @@ class ModelFrame(wx.Frame):
     def OnPageChanged(self, event):
         """Page in notebook changed"""
         page = event.GetSelection()
-        if page in [self.notebook.GetPageIndexByName('python'),
-                    self.notebook.GetPageIndexByName('pywps')]:
-            if self.pythonPanel.IsEmpty() or self.pyWPSPanel.IsEmpty():
+
+        if page == self.notebook.GetPageIndexByName('python'):
+            if self.pythonPanel.IsEmpty():
                 self.pythonPanel.RefreshScript()
-                self.pyWPSPanel.RefreshScript()
 
             if self.pythonPanel.IsModified():
                 self.SetStatusText(
                     _('Python script contains local modifications'), 0)
-            elif self.pyWPSPanel.IsModified():
+            else:
+                self.SetStatusText(_('Python script is up-to-date'), 0)
+        elif page == self.notebook.GetPageIndexByName('pywps'):
+            if self.pyWPSPanel.IsEmpty():
+                self.pyWPSPanel.RefreshScript()
+
+            if self.pyWPSPanel.IsModified():
                 self.SetStatusText(
                     _('PyWPS script contains local modifications'), 0)
             else:
-                self.SetStatusText(_('Python script is up-to-date'), 0)
+                self.SetStatusText(_('PyWPS script is up-to-date'), 0)
         elif page == self.notebook.GetPageIndexByName('items'):
             self.itemPanel.Update()
 

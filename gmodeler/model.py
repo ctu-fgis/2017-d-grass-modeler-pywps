@@ -2526,6 +2526,7 @@ class WritePyWPSFile:
 import sys
 import os
 import atexit
+import tempfile
 from grass.script import run_command
 from pywps import Process, LiteralInput, ComplexInput, ComplexOutput, Format
 from pywps.app.Service import Service
@@ -2547,8 +2548,7 @@ class Model(Process):
                                       variables=item.GetParameterizedParams())
 
         # TODO: Specify grass_location
-        self.fd.write(r"""
-        super(Model, self).__init__(
+        self.fd.write(r"""        super(Model, self).__init__(
             self._handler,
             identifier='{identifier}',
             title='{title}',
@@ -2647,6 +2647,7 @@ if __name__ == "__main__":
                     format_spec,
                     value)
 
+        self.fd.write('\n')
 
     def _write_input_output_object(self, io_data, object_type, name, item,
                                    desc, format_spec, value):
@@ -2740,6 +2741,59 @@ if __name__ == "__main__":
                 len(strcmd) - 1,
                 variables))
 
+        # write v.out.ogr and r.out.gdal exports for all outputs
+        for param in item.GetParams()['params']:
+            if param['age'] == 'new':
+                if param['prompt'] == 'vector':
+                    command = 'v.out.ogr'
+                    format = "'GML'"
+                    extension = '.gml'
+                elif param['prompt'] == 'raster':
+                    command = 'r.out.gdal'
+                    format = "'GTiff'"
+                    extension = '.tif'
+                else:
+                    # TODO: Support 3D
+                    command = 'WRITE YOUR EXPORT COMMAND'
+
+                n = param.get('name', None)
+                param_name = self._getParamName(n, item)
+
+                keys = param.keys()
+                if 'parameterized' in keys and param['parameterized'] is True:
+                    param_request = "request.inputs['{}'][0].data".format(
+                        param_name)
+                else:
+                    param_request = "'{}'".format(param['value'])
+
+                self.fd.write("""
+{run_command}'{cmd}',
+{indent1}input={input},
+{indent2}output=os.path.join(tempfile.gettempdir(), {out} + '{format_ext}'),
+{indent3}format={format})
+""".format(run_command=strcmd,
+           cmd=command,
+           indent1=' ' * (self.indent + 12),
+           input=param_request,
+           indent2=' ' * (self.indent + 12),
+           out=param_request,
+           format_ext=extension,
+           indent3=' ' * (self.indent + 12),
+           format=format))
+
+                left_side_out = "response.outputs['{}'].file".format(
+                    param_name)
+                right_side_out = "os.path.join(\n{indent1}" \
+                                 "tempfile.gettempdir(),\n{indent2}{out} + '" \
+                                 "{format_ext}')".format(
+                    indent1=' ' * (self.indent + 4),
+                    indent2=' ' * (self.indent + 4),
+                    out=param_request,
+                    format_ext=extension)
+                self.fd.write('\n{}{} = {}'.format(' ' * self.indent,
+                                                   left_side_out,
+                                                   right_side_out))
+
     def _getPythonActionCmd(self, item, task, cmdIndent, variables={}):
         opts = task.get_options()
 
@@ -2778,11 +2832,6 @@ if __name__ == "__main__":
                     if 'input' in name:
                         value = "request.inputs['{}'][0].file".format(
                             self._getParamName(name, item))
-                    elif 'output' in name:
-                        param_name = self._getParamName(name, item)
-                        value = "response.outputs['{}'].data".format(
-                            param_name)
-                        out = param_name
                     else:
                         value = "request.inputs['{}'][0].data".format(
                             self._getParamName(name, item))

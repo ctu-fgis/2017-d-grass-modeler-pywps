@@ -2614,27 +2614,10 @@ if __name__ == "__main__":
 
 
         for param in item.GetParameterizedParams()['params']:
-            if param['label']:
-                desc = param['label']
-            else:
-                desc = param['description']
+            desc = self._getParamDesc(param)
+            value = self._getParamValue(param)
 
-            if param['value'] and 'output' not in param['name']:
-                if param['type'] in ['float', 'integer']:
-                    value = param['value']
-                else:
-                    value = "'{}'".format(param['value'])
-
-                value = ",\n{}default={}".format(' ' * (self.indent + 4),
-                                                value)
-            else:
-                value = ''
-
-            if 'output' in param['name']:
-                io_data = 'outputs'
-                object_type = 'ComplexOutput'
-                format_spec = 'supported_formats=supFormats'
-            elif 'input' in param['name']:
+            if 'input' in param['name']:
                 io_data = 'inputs'
                 object_type = 'ComplexInput'
                 format_spec = 'supported_formats=supFormats'
@@ -2829,6 +2812,27 @@ if __name__ == "__main__":
             module_id=item.GetId(),
             param_name=parameter_name)
 
+    def _getParamDesc(self, param):
+        if param['label']:
+            desc = param['label']
+        else:
+            desc = param['description']
+
+        return desc
+
+    def _getParamValue(self, param):
+        if param['value'] and 'output' not in param['name']:
+            if param['type'] in ['float', 'integer']:
+                value = param['value']
+            else:
+                value = "'{}'".format(param['value'])
+
+            value = ",\n{}default={}".format(' ' * (self.indent + 4),
+                                             value)
+        else:
+            value = ''
+
+        return value
 
 class WritePythonFile:
 

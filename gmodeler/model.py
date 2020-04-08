@@ -2652,7 +2652,8 @@ if __name__ == "__main__":
     def _write_input_output_object(self, io_data, object_type, name, item,
                                    desc, format_spec, value):
         self.fd.write(
-"""        {ins_or_outs}.append({lit_or_complex}(identifier='{param_name}',
+"""        {ins_or_outs}.append({lit_or_complex}(
+            identifier='{param_name}',
             title='{description}',
             {special_params}{value}))
 """.format(ins_or_outs=io_data,
@@ -2769,16 +2770,20 @@ if __name__ == "__main__":
                 self.fd.write("""
 {run_command}'{cmd}',
 {indent1}input={input},
-{indent2}output=os.path.join(tempfile.gettempdir(), {out} + '{format_ext}'),
-{indent3}format={format})
+{indent2}output=os.path.join(
+{indent3}tempfile.gettempdir(),
+{indent4}{out} + '{format_ext}'),
+{indent5}format={format})
 """.format(run_command=strcmd,
            cmd=command,
            indent1=' ' * (self.indent + 12),
            input=param_request,
            indent2=' ' * (self.indent + 12),
+           indent3=' ' * (self.indent + 16),
+           indent4=' ' * (self.indent + 16),
            out=param_request,
            format_ext=extension,
-           indent3=' ' * (self.indent + 12),
+           indent5=' ' * (self.indent + 12),
            format=format))
 
                 left_side_out = "response.outputs['{}'].file".format(
@@ -2846,8 +2851,9 @@ if __name__ == "__main__":
             ret += ",\n{indent}flags='{fl}'".format(indent=' ' * cmdIndent,
                                                     fl=flags)
             if itemParameterizedFlags:
-                ret += ' + getParameterizedFlags(request.inputs, [{}])'.format(
-                    itemParameterizedFlags)
+                ret += ' + getParameterizedFlags(\n{}request.inputs, ' \
+                       '[{}])'.format(' ' * (cmdIndent + 4),
+                                      itemParameterizedFlags)
         elif itemParameterizedFlags:
             ret += ',\n{}flags=getParameterizedFlags(request.inputs, [{}])'.format(
                 ' ' * cmdIndent,

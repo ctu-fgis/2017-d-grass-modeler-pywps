@@ -2630,6 +2630,24 @@ if __name__ == "__main__":
                 io_data, object_type, param['name'], item, desc, format_spec,
                 value)
 
+        self.fd.write('\n')
+
+        # write ComplexOutputs
+        for param in item.GetParams()['params']:
+            desc = self._getParamDesc(param)
+            value = self._getParamValue(param)
+
+            if param['age'] == 'new':
+                io_data = 'outputs'
+                object_type = 'ComplexOutput'
+                format_spec = 'supported_formats=supFormats'
+
+                self._write_input_output_object(
+                    io_data, object_type, param['name'], item, desc,
+                    format_spec,
+                    value)
+
+
     def _write_input_output_object(self, io_data, object_type, name, item,
                                    desc, format_spec, value):
         self.fd.write(
